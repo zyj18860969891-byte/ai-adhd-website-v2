@@ -1,0 +1,34 @@
+[
+  {
+    "tag": "inbox",
+    "contextType": "inbox",
+    "trackerFile": "./data/tracking/inbox.md",
+    "collectionFile": "./data/collections/inbox.md",
+    "active": true,
+    "description": "General inbox for capturing items that need sorting"
+  },
+  {
+    "tag": "projects",
+    "contextType": "projects", 
+    "trackerFile": "./data/tracking/projects.md",
+    "collectionFile": "./data/collections/projects.md",
+    "active": true,
+    "description": "Active projects requiring multiple steps"
+  },
+  {
+    "tag": "tasks",
+    "contextType": "tasks",
+    "trackerFile": "./data/tracking/tasks.md", 
+    "collectionFile": "./data/collections/tasks.md",
+    "active": true,
+    "description": "Single-step tasks that can be completed quickly"
+  },
+  {
+    "tag": "resources",
+    "contextType": "resources",
+    "trackerFile": "./data/tracking/resources.md",
+    "collectionFile": "./data/collections/resources.md",
+    "active": true, 
+    "description": "Reference materials and resources for future use"
+  }
+]

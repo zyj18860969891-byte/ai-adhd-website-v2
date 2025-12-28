@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "name": "mcp-shrimp-task-manager",
+  "builds": [
+    {
+      "src": "mcp-shrimp-task-manager/package.json",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/mcp/(.*)",
+      "dest": "/mcp-shrimp-task-manager/api/mcp/$1"
+    },
+    {
+      "src": "/",
+      "dest": "/mcp-shrimp-task-manager/api/mcp"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "mcp-shrimp-task-manager/api/mcp/**/*.js": {
+      "maxDuration": 30
+    }
+  }
+}

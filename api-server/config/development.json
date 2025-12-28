@@ -1,0 +1,45 @@
+﻿{
+  "client": {
+    "timeout": {
+      "connection": 10000,
+      "request": 30000,
+      "toolCall": 60000,
+      "healthCheck": 5000,
+      "reconnect": 3000
+    },
+    "retry": {
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "maxRetryDelay": 10000
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 5000,
+    "thresholds": {
+      "errorRate": 0.1,
+      "avgResponseTime": 5000,
+      "consecutiveFailures": 5
+    }
+  },
+  "optimization": {
+    "maxConcurrentCalls": 5,
+    "requestTimeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000,
+    "degradationThreshold": 0.5,
+    "optimizationEnabled": true
+  },
+  "ux": {
+    "enabled": true,
+    "feedback": {
+      "styles": {
+        "success": "✅",
+        "error": "❌",
+        "warning": "⚠️",
+        "info": "ℹ️",
+        "progress": "🔄"
+      }
+    }
+  }
+}

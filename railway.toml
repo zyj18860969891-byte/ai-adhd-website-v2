@@ -1,0 +1,15 @@
+# Shrimp Task Manager MCP Railway Configuration
+[build]
+builder = "nixpacks"
+buildCommand = "cd mcp-shrimp-task-manager && npm install && npm run build:mcp"
+
+[env]
+NODE_ENV = "production"
+PORT = "3009"
+
+[run]
+startCommand = "cd mcp-shrimp-task-manager && npm run railway"
+
+[deploy]
+numReplicas = 1
+sleepApplication = false

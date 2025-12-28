@@ -1,0 +1,17 @@
+@echo off
+REM 启动增强版Shrimp MCP服务（Windows版本）
+
+echo 启动增强版Shrimp MCP服务...
+
+REM 检查环境变量
+if "%OPENAI_API_KEY%"=="" (
+    echo 错误: OPENAI_API_KEY 环境变量未设置
+    exit /b 1
+)
+
+echo 环境变量检查通过
+echo OPENAI_MODEL: %OPENAI_MODEL%
+echo OPENAI_BASE_URL: %OPENAI_BASE_URL%
+
+REM 启动服务
+node dist\enhanced-index.js
