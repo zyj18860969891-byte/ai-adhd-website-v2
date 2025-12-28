@@ -66,6 +66,9 @@
     "tsx": "^4.20.5",
     "typescript": "^5.0.0"
   },
+  "optionalDependencies": {
+    "typescript": "^5.0.0"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

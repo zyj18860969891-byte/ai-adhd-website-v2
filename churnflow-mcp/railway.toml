@@ -7,7 +7,7 @@ NODE_ENV = "production"
 PORT = "3008"
 
 [run]
-startCommand = "npm run build && npm start"
+startCommand = "npm install typescript && npm run build && npm start"
 
 [deploy]
-startCommand = "npm run build && npm start"
+startCommand = "npm install typescript && npm run build && npm start"
