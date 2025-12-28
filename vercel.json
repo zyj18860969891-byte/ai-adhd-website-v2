@@ -18,8 +18,8 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "@api-url",
-    "NEXT_PUBLIC_MCP_CHURNFLOW_URL": "@mcp-churnflow-url",
-    "NEXT_PUBLIC_MCP_SHRIMP_URL": "@mcp-shrimp-url"
+    "NEXT_PUBLIC_API_URL": "https://api-server-production.up.railway.app",
+    "NEXT_PUBLIC_MCP_CHURNFLOW_URL": "https://churnflow-mcp-production.up.railway.app",
+    "NEXT_PUBLIC_MCP_SHRIMP_URL": "https://shrimp-task-manager-production.up.railway.app"
   }
 }
