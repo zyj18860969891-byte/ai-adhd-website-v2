@@ -1,13 +1,14 @@
 # ChurnFlow MCP Railway Configuration
 [build]
 builder = "nixpacks"
+buildCommand = "npm ci && npm install -g typescript && npm run build"
 
 [env]
 NODE_ENV = "production"
 PORT = "3008"
 
 [run]
-startCommand = "npm install -g typescript && npm run build && npm start"
+startCommand = "npm start"
 
 [deploy]
-startCommand = "npm install -g typescript && npm run build && npm start"
+startCommand = "npm start"
