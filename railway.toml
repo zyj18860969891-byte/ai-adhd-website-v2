@@ -1,14 +1,16 @@
-# Shrimp Task Manager MCP Railway Configuration
+# Combined Railway Configuration for API Server and MCP Services
 [build]
-builder = "nixpacks"
-buildCommand = "cd mcp-shrimp-task-manager && npm install && npm run build:mcp"
+builder = "docker"
+dockerfilePath = "combined-Dockerfile"
 
 [env]
 NODE_ENV = "production"
-PORT = "3009"
+PORT = "3003"
+CHURNFLOW_PORT = "3008"
+SHRIMP_PORT = "3009"
 
 [run]
-startCommand = "cd mcp-shrimp-task-manager && npm run railway"
+startCommand = "sh -c './start-all-services.sh'"
 
 [deploy]
 numReplicas = 1

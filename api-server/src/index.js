@@ -5,6 +5,9 @@ dotenv.config();
 
 import StdioMCPClient from './stdio-mcp-client.js';
 
+// 启动时不要等待MCP服务连接，让它们在后台运行
+console.log('Starting API Server on port', process.env.PORT || 3003);
+
 const app = express();
 const API_PORT = process.env.PORT || 3003;
 
@@ -25,7 +28,9 @@ app.get('/api/health', async (req, res) => {
 
     // 检查ChurnFlow MCP服务
     try {
-      const churnFlowClient = new StdioMCPClient('../../churnflow-mcp');
+      // 使用环境变量中的端口，而不是硬编码路径
+      const churnFlowPort = process.env.CHURNFLOW_PORT || 3008;
+      const churnFlowClient = new StdioMCPClient(`http://localhost:${churnFlowPort}`);
       await churnFlowClient.connect();
       const churnFlowHealth = await churnFlowClient.healthCheck();
       healthStatus.services.churnFlow = {
@@ -42,7 +47,9 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Shrimp MCP服务
     try {
-      const shrimpClient = new StdioMCPClient('../../mcp-shrimp-task-manager');
+      // 使用环境变量中的端口，而不是硬编码路径
+      const shrimpPort = process.env.SHRIMP_PORT || 3009;
+      const shrimpClient = new StdioMCPClient(`http://localhost:${shrimpPort}`);
       await shrimpClient.connect();
       const shrimpHealth = await shrimpClient.healthCheck();
       healthStatus.services.shrimp = {
@@ -74,6 +81,7 @@ app.get('/api/health', async (req, res) => {
     
     res.status(allHealthy ? 200 : 503).json(healthStatus);
   } catch (error) {
+    console.error('健康检查错误:', error);
     res.status(500).json({
       timestamp: new Date().toISOString(),
       overallStatus: 'unhealthy',

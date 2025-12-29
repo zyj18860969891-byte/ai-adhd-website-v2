@@ -3,17 +3,7 @@
   "builds": [
     {
       "src": "web-ui/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "buildCommand": "cd web-ui && npm run build",
-        "installCommand": "cd web-ui && npm install"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "use": "@vercel/next"
     }
   ],
   "env": {
