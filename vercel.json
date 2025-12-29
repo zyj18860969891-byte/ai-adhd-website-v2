@@ -1,13 +1,9 @@
 {
   "version": 2,
-  "name": "ai-adhd-web-ui",
   "builds": [
     {
       "src": "web-ui/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "outputDirectory": "web-ui/.next"
-      }
+      "use": "@vercel/next"
     }
   ],
   "routes": [
