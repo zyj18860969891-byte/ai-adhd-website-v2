@@ -1,0 +1,86 @@
+[2025-12-27T12:44:16.280Z] Starting Enhanced MCP Service Test
+[2025-12-27T12:44:16.293Z] Waiting for service to start...
+[2025-12-27T12:44:17.564Z] Service output: Shrimp Task Manager server is running...
+[2025-12-27T12:44:19.297Z] 
+=== Test 1: Initialize Request ===
+[2025-12-27T12:44:19.299Z] Sending request: {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"Test Client","version":"1.0.0"}}}
+[2025-12-27T12:44:19.308Z] Service output: {"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{},"logging":{}},"serverInfo":{"name":"Shrimp Task Manager","version":"1.0.0"}},"jsonrpc":"2.0","id":1}
+[2025-12-27T12:44:19.308Z] Received raw data: {"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{},"logging":{}},"serverInfo":{"name":"Shrimp Task Manager","version":"1.0.0"}},"jsonrpc":"2.0","id":1}
+[2025-12-27T12:44:19.309Z] Initialize response: {
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {},
+      "logging": {}
+    },
+    "serverInfo": {
+      "name": "Shrimp Task Manager",
+      "version": "1.0.0"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 1
+}
+[2025-12-27T12:44:19.310Z] 
+=== Test 2: Tools/List Request ===
+[2025-12-27T12:44:19.312Z] Sending request: {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+[2025-12-27T12:44:19.315Z] Service output: {"method":"roots/list","jsonrpc":"2.0","id":0}
+[2025-12-27T12:44:19.315Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":0}
+[2025-12-27T12:44:29.312Z] Tools/list request failed: Request timeout after 10 seconds: {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+[2025-12-27T12:44:29.313Z] 
+=== Test 3: Tools/Call Request with Correct Parameters ===
+[2025-12-27T12:44:29.313Z] Sending request: {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"plan_task","arguments":{"description":"创建一个简单的待办事项应用","requirements":"使用React和Node.js实现","existingTasksReference":false}}}
+[2025-12-27T12:44:29.317Z] Service output: {"method":"roots/list","jsonrpc":"2.0","id":1}
+[2025-12-27T12:44:29.318Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":1}
+[2025-12-27T12:44:29.318Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":1}
+[2025-12-27T12:44:39.330Z] Correct tools/call request failed: Request timeout after 10 seconds: {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"plan_task","arguments":{"description":"创建一个简单的待办事项应用","requirements":"使用React和Node.js实现","existingTasksReference":false}}}
+[2025-12-27T12:44:39.331Z] 
+=== Test 4: Tools/Call Request with Invalid Parameters ===
+[2025-12-27T12:44:39.332Z] Sending request: {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"plan_task","arguments":{"description":"","requirements":"使用React和Node.js实现","existingTasksReference":false}}}
+[2025-12-27T12:44:39.336Z] Service output: {"result":{"content":[{"type":"text","text":"工具调用失败: plan_task\n\n参数验证错误:\n1. 字段 \"description\": 任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確\n\n修复建议:\n1. 任务描述是必需的，应该包含任务目标、背景和预期成果\n   示例: description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\"\n\n请根据上述建议修正参数后重试。"}],"metadata":{"errorDetails":{"tool":"plan_task","timestamp":"2025-12-27T12:44:39.335Z","validationErrors":[{"field":"description","message":"任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確","code":"too_small"}],"suggestions":[{"type":"missing_parameter","parameter":"description","suggestion":"任务描述是必需的，应该包含任务目标、背景和预期成果","example":"description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\""}]},"errorType":"parameter_validation","severity":"warning"}},"jsonrpc":"2.0","id":4}
+[2025-12-27T12:44:39.336Z] Received raw data: {"result":{"content":[{"type":"text","text":"工具调用失败: plan_task\n\n参数验证错误:\n1. 字段 \"description\": 任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確\n\n修复建议:\n1. 任务描述是必需的，应该包含任务目标、背景和预期成果\n   示例: description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\"\n\n请根据上述建议修正参数后重试。"}],"metadata":{"errorDetails":{"tool":"plan_task","timestamp":"2025-12-27T12:44:39.335Z","validationErrors":[{"field":"description","message":"任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確","code":"too_small"}],"suggestions":[{"type":"missing_parameter","parameter":"description","suggestion":"任务描述是必需的，应该包含任务目标、背景和预期成果","example":"description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\""}]},"errorType":"parameter_validation","severity":"warning"}},"jsonrpc":"2.0","id":4}
+[2025-12-27T12:44:39.338Z] Received raw data: {"result":{"content":[{"type":"text","text":"工具调用失败: plan_task\n\n参数验证错误:\n1. 字段 \"description\": 任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確\n\n修复建议:\n1. 任务描述是必需的，应该包含任务目标、背景和预期成果\n   示例: description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\"\n\n请根据上述建议修正参数后重试。"}],"metadata":{"errorDetails":{"tool":"plan_task","timestamp":"2025-12-27T12:44:39.335Z","validationErrors":[{"field":"description","message":"任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確","code":"too_small"}],"suggestions":[{"type":"missing_parameter","parameter":"description","suggestion":"任务描述是必需的，应该包含任务目标、背景和预期成果","example":"description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\""}]},"errorType":"parameter_validation","severity":"warning"}},"jsonrpc":"2.0","id":4}
+[2025-12-27T12:44:39.338Z] Received raw data: {"result":{"content":[{"type":"text","text":"工具调用失败: plan_task\n\n参数验证错误:\n1. 字段 \"description\": 任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確\n\n修复建议:\n1. 任务描述是必需的，应该包含任务目标、背景和预期成果\n   示例: description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\"\n\n请根据上述建议修正参数后重试。"}],"metadata":{"errorDetails":{"tool":"plan_task","timestamp":"2025-12-27T12:44:39.335Z","validationErrors":[{"field":"description","message":"任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確","code":"too_small"}],"suggestions":[{"type":"missing_parameter","parameter":"description","suggestion":"任务描述是必需的，应该包含任务目标、背景和预期成果","example":"description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\""}]},"errorType":"parameter_validation","severity":"warning"}},"jsonrpc":"2.0","id":4}
+[2025-12-27T12:44:39.339Z] Invalid tools/call response: {
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "工具调用失败: plan_task\n\n参数验证错误:\n1. 字段 \"description\": 任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確\n\n修复建议:\n1. 任务描述是必需的，应该包含任务目标、背景和预期成果\n   示例: description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\"\n\n请根据上述建议修正参数后重试。"
+      }
+    ],
+    "metadata": {
+      "errorDetails": {
+        "tool": "plan_task",
+        "timestamp": "2025-12-27T12:44:39.335Z",
+        "validationErrors": [
+          {
+            "field": "description",
+            "message": "任務描述不能少於10個字符，請提供更詳細的描述以確保任務目標明確",
+            "code": "too_small"
+          }
+        ],
+        "suggestions": [
+          {
+            "type": "missing_parameter",
+            "parameter": "description",
+            "suggestion": "任务描述是必需的，应该包含任务目标、背景和预期成果",
+            "example": "description: \"创建一个用户管理系统，包含用户注册、登录和个人资料管理功能\""
+          }
+        ]
+      },
+      "errorType": "parameter_validation",
+      "severity": "warning"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 4
+}
+[2025-12-27T12:44:39.341Z] 
+=== Test 5: Tools/Call Request with Missing Parameters ===
+[2025-12-27T12:44:39.341Z] Sending request: {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"plan_task","arguments":{"description":"创建一个简单的待办事项应用"}}}
+[2025-12-27T12:44:39.343Z] Service output: {"method":"roots/list","jsonrpc":"2.0","id":2}
+[2025-12-27T12:44:39.343Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":2}
+[2025-12-27T12:44:39.343Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":2}
+[2025-12-27T12:44:39.344Z] Received raw data: {"method":"roots/list","jsonrpc":"2.0","id":2}
+[2025-12-27T12:44:49.347Z] Missing params tools/call request failed: Request timeout after 10 seconds: {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"plan_task","arguments":{"description":"创建一个简单的待办事项应用"}}}

@@ -4,6 +4,5 @@
 node_modules
 out
 
-# But allow the web-ui directory to be built
-!
-web-ui/**
+# Allow web-ui files to be included in deployment
+!*

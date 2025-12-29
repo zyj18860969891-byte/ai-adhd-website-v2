@@ -1,0 +1,35 @@
+
+> @your-org/mcp-client-manager@1.0.0 test
+> jest
+
+● Validation Warning:
+
+  Unknown option "moduleNameMapping" with value {"^@/(.*)$": "<rootDir>/src/$1"} was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "moduleNameMapping" with value {"^@/(.*)$": "<rootDir>/src/$1"} was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In E:\MultiModel\ai-adhd-website\packages\mcp-client-manager
+  13 files checked.
+  testMatch: **/__tests__/**/*.ts, **/?(*.)+(spec|test).ts - 0 matches
+  testPathIgnorePatterns: \\node_modules\\ - 13 matches
+  testRegex:  - 0 matches
+Pattern:  - 0 matches
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path E:\MultiModel\ai-adhd-website\packages\mcp-client-manager
+npm error workspace @your-org/mcp-client-manager@1.0.0
+npm error location E:\MultiModel\ai-adhd-website\packages\mcp-client-manager
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c jest
