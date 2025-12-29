@@ -1,7 +1,6 @@
 # ChurnFlow MCP Railway Configuration
 [build]
-builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+builder = "dockerfile"
 
 [env]
 NODE_ENV = "production"
