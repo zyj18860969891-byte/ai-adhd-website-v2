@@ -4,19 +4,19 @@
 
 # 启动API Server
 echo "Starting API Server..."
-cd api-server
+cd /app/api-server
 npm run start-api &
 API_PID=$!
 
 # 启动ChurnFlow MCP服务
 echo "Starting ChurnFlow MCP Service..."
-cd ../churnflow-mcp
+cd /app/churnflow-mcp
 npm run start &
 CHURNFLOW_PID=$!
 
 # 启动Shrimp Task Manager MCP服务
 echo "Starting Shrimp Task Manager MCP Service..."
-cd ../mcp-shrimp-task-manager
+cd /app/mcp-shrimp-task-manager
 npm run start &
 SHRIMP_PID=$!
 
