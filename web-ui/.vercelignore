@@ -1,3 +1,9 @@
+# .vercelignore
+# Ignore build artifacts and node_modules
 .next
 node_modules
 out
+
+# But allow the web-ui directory to be built
+!
+web-ui/**
