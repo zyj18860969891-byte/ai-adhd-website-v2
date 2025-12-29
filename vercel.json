@@ -4,14 +4,13 @@
   "builds": [
     {
       "src": "web-ui/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": {
+        "outputDirectory": "web-ui/.next"
+      }
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "/$1"

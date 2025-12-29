@@ -1,8 +1,3 @@
 # .vercelignore
-# Ignore build artifacts and node_modules
-.next
+# Only ignore node_modules in the root, as Next.js needs .next and out directories
 node_modules
-out
-
-# Allow web-ui files to be included in deployment
-!*
