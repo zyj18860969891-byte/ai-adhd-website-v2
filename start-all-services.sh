@@ -4,16 +4,20 @@
 
 echo "Starting all services..."
 
-# 启动ChurnFlow MCP服务
-echo "Starting ChurnFlow MCP Service..."
+# 构建并启动ChurnFlow MCP服务
+echo "Building ChurnFlow MCP Service..."
 cd /app/churnflow-mcp
+npm run build
+echo "Starting ChurnFlow MCP Service..."
 npm run start &
 CHURNFLOW_PID=$!
 echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
 
-# 启动Shrimp Task Manager MCP服务
-echo "Starting Shrimp Task Manager MCP Service..."
+# 构建并启动Shrimp Task Manager MCP服务
+echo "Building Shrimp Task Manager MCP Service..."
 cd /app/mcp-shrimp-task-manager
+npm run build
+echo "Starting Shrimp Task Manager MCP Service..."
 npm run start &
 SHRIMP_PID=$!
 echo "Shrimp Task Manager MCP PID: $SHRIMP_PID"
