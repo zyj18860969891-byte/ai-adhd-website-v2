@@ -3,7 +3,7 @@
   "name": "ai-adhd-web-ui",
   "builds": [
     {
-      "src": "package.json",
+      "src": "web-ui/package.json",
       "use": "@vercel/next"
     }
   ],
