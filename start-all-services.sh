@@ -36,3 +36,11 @@ echo "API Server PID: $API_PID"
 
 # 等待所有进程完成
 wait $API_PID $CHURNFLOW_PID $SHRIMP_PID
+
+echo "All services started:"
+echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
+echo "Shrimp Task Manager MCP PID: $SHRIMP_PID"
+echo "API Server PID: $API_PID"
+
+# 等待所有进程完成
+wait $API_PID $CHURNFLOW_PID $SHRIMP_PID

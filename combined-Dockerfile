@@ -22,8 +22,10 @@ RUN chmod +x node_modules/.bin/*
 # Make the startup script executable
 RUN chmod +x start-all-services.sh
 
-# Build the TypeScript code
-RUN npm run build
+# Build the TypeScript code for each service separately
+RUN cd api-server && npm run build
+RUN cd churnflow-mcp && npm run build
+RUN cd mcp-shrimp-task-manager && npm run build
 
 # Expose ports for services
 EXPOSE 3003 3008 3009
