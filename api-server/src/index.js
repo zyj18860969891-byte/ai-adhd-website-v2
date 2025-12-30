@@ -28,8 +28,9 @@ app.get('/api/health', async (req, res) => {
 
     // 检查ChurnFlow MCP服务
     try {
-      // 使用相对路径连接MCP服务
-      const churnFlowClient = new StdioMCPClient('../../churnflow-mcp');
+      // 使用环境变量配置的路径连接MCP服务
+      const churnFlowPath = process.env.CHURNFLOW_PATH || '/app/churnflow-mcp/dist/index.js';
+      const churnFlowClient = new StdioMCPClient(churnFlowPath);
       await churnFlowClient.connect();
       const churnFlowHealth = await churnFlowClient.healthCheck();
       healthStatus.services.churnFlow = {
@@ -46,8 +47,9 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Shrimp MCP服务
     try {
-      // 使用相对路径连接MCP服务
-      const shrimpClient = new StdioMCPClient('../../mcp-shrimp-task-manager');
+      // 使用环境变量配置的路径连接MCP服务
+      const shrimpPath = process.env.SHRIMP_PATH || '/app/mcp-shrimp-task-manager/dist/index.js';
+      const shrimpClient = new StdioMCPClient(shrimpPath);
       await shrimpClient.connect();
       const shrimpHealth = await shrimpClient.healthCheck();
       healthStatus.services.shrimp = {

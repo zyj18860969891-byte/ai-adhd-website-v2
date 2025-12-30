@@ -34,24 +34,28 @@ echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
 echo "Shrimp Task Manager MCP PID: $SHRIMP_PID"
 echo "API Server PID: $API_PID"
 
+# 检查进程是否还在运行
+sleep 2
+if ps -p $CHURNFLOW_PID > /dev/null; then
+    echo "ChurnFlow MCP is running"
+else
+    echo "ChurnFlow MCP failed to start"
+fi
+
+if ps -p $SHRIMP_PID > /dev/null; then
+    echo "Shrimp Task Manager MCP is running"
+else
+    echo "Shrimp Task Manager MCP failed to start"
+fi
+
+if ps -p $API_PID > /dev/null; then
+    echo "API Server is running"
+else
+    echo "API Server failed to start"
+fi
+
 # 等待所有进程完成
-wait $API_PID $CHURNFLOW_PID $SHRIMP_PID
-
-echo "All services started:"
-echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
-echo "Shrimp Task Manager MCP PID: $SHRIMP_PID"
-echo "API Server PID: $API_PID"
-
-# 等待所有进程完成
-wait $API_PID $CHURNFLOW_PID $SHRIMP_PID
-
-echo "All services started:"
-echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
-echo "Shrimp Task Manager MCP PID: $SHRIMP_PID"
-echo "API Server PID: $API_PID"
-
-# 等待所有进程完成
-wait $API_PID $CHURNFLOW_PID $SHRIMP_PID
+wait
 
 echo "All services started:"
 echo "ChurnFlow MCP PID: $CHURNFLOW_PID"

@@ -45,15 +45,27 @@ export default class StdioMCPClient extends EventEmitter {
         this.emit('disconnected');
       });
       
-      this.state.isConnected = true;
-      this.emit('connected');
-      
       // 设置超时
-      setTimeout(() => {
+      const timeoutTimer = setTimeout(() => {
         if (!this.state.isConnected) {
           this.emit('error', new Error('Connection timeout'));
         }
       }, this.options.timeout.connection);
+      
+      this.process.on('error', (error) => {
+        clearTimeout(timeoutTimer);
+        this.emit('error', error);
+      });
+      
+      this.process.on('exit', (code) => {
+        clearTimeout(timeoutTimer);
+        this.state.isConnected = false;
+        this.emit('disconnected');
+      });
+      
+      this.state.isConnected = true;
+      clearTimeout(timeoutTimer);
+      this.emit('connected');
       
     } catch (error) {
       this.emit('error', error);

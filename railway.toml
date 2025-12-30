@@ -8,6 +8,8 @@ NODE_ENV = "production"
 PORT = "3003"
 CHURNFLOW_PORT = "3008"
 SHRIMP_PORT = "3009"
+CHURNFLOW_PATH = "/app/churnflow-mcp/dist/index.js"
+SHRIMP_PATH = "/app/mcp-shrimp-task-manager/dist/custom-mcp-server.js"
 
 [run]
 startCommand = "sh -c './start-all-services.sh'"
