@@ -38,10 +38,11 @@ if (-not (Test-Path "package.json")) {
 }
 
 # 显示修复摘要
-Write-Host "`n🔧 MCP 服务修复摘要:" -ForegroundColor Green
+Write-Host "`n🔧 MCP 服务最终修复摘要:" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "✅ 修复了 Railway 构建上下文问题"
 Write-Host "✅ 为每个服务创建了独立的 Dockerfile"
+Write-Host "✅ 修复了 api-server Dockerfile 中的文件路径问题"
 Write-Host "✅ 添加了数据库自动初始化脚本"
 Write-Host "✅ 改进了错误处理，服务可在文件模式下运行"
 Write-Host "✅ 创建了独立的 Railway 配置文件"

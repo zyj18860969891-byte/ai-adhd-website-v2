@@ -10,24 +10,17 @@ WORKDIR /app
 # Copy package files from api-server directory
 COPY package*.json ./
 
-# Install root dependencies
-RUN npm install --ignore-scripts
+# Install dependencies
+RUN npm ci
 
-# Install TypeScript compiler and Node.js types
-RUN npm install -g typescript @types/node
-
-# Copy source code
+# Bundle app source code
 COPY . .
 
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
-# Make the startup script executable
-RUN chmod +x start-all-services.sh
-RUN chmod +x init-database.sh
-
-# Build API server
-RUN npm install @types/node && npm run build
+# Build the TypeScript code
+RUN npm run build
 
 # Expose port for API server
 EXPOSE 3003
