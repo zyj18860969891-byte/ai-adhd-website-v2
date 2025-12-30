@@ -23,7 +23,7 @@ RUN chmod +x node_modules/.bin/*
 RUN chmod +x /app/start-all-services.sh
 
 # Build the TypeScript code for each service separately
-RUN cd api-server && npm run build
+RUN npm run build
 RUN cd churnflow-mcp && npm run build
 RUN cd mcp-shrimp-task-manager && npm run build
 
