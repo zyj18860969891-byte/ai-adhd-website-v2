@@ -1,0 +1,13 @@
+# ChurnFlow MCP Railway Configuration
+[build]
+builder = "dockerfile"
+
+[env]
+NODE_ENV = "production"
+PORT = "3008"
+
+[run]
+startCommand = "npm start"
+
+[deploy]
+startCommand = "npm start"
