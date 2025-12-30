@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { spawn } from 'child_process';
 dotenv.config();
 
 import StdioMCPClient from './stdio-mcp-client.js';
@@ -26,18 +27,33 @@ app.get('/api/health', async (req, res) => {
       services: {}
     };
 
-    // 检查ChurnFlow MCP服务
+    // 检查ChurnFlow MCP服务 - 使用轻量级检查，不建立实际连接
     try {
-      // 使用环境变量配置的路径连接MCP服务
       const churnFlowPath = process.env.CHURNFLOW_PATH || '/app/churnflow-mcp/dist/index.js';
-      const churnFlowClient = new StdioMCPClient(churnFlowPath);
-      await churnFlowClient.connect();
-      const churnFlowHealth = await churnFlowClient.healthCheck();
-      healthStatus.services.churnFlow = {
-        status: 'healthy',
-        details: churnFlowHealth
-      };
-      churnFlowClient.disconnect();
+      // 只检查进程是否能启动，不建立 MCP 连接
+      const churnFlowProcess = spawn('node', [churnFlowPath], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      // 给进程一点时间启动
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 检查进程是否还在运行
+      const isRunning = churnFlowProcess.exitCode === null;
+      
+      if (isRunning) {
+        // 进程还在运行，立即结束它
+        churnFlowProcess.kill();
+        healthStatus.services.churnFlow = {
+          status: 'healthy',
+          details: 'Process started successfully'
+        };
+      } else {
+        healthStatus.services.churnFlow = {
+          status: 'unhealthy',
+          error: 'Process failed to start'
+        };
+      }
     } catch (error) {
       healthStatus.services.churnFlow = {
         status: 'unhealthy',
@@ -45,18 +61,33 @@ app.get('/api/health', async (req, res) => {
       };
     }
 
-    // 检查Shrimp MCP服务
+    // 检查Shrimp MCP服务 - 使用轻量级检查，不建立实际连接
     try {
-      // 使用环境变量配置的路径连接MCP服务
       const shrimpPath = process.env.SHRIMP_PATH || '/app/mcp-shrimp-task-manager/dist/index.js';
-      const shrimpClient = new StdioMCPClient(shrimpPath);
-      await shrimpClient.connect();
-      const shrimpHealth = await shrimpClient.healthCheck();
-      healthStatus.services.shrimp = {
-        status: 'healthy',
-        details: shrimpHealth
-      };
-      shrimpClient.disconnect();
+      // 只检查进程是否能启动，不建立 MCP 连接
+      const shrimpProcess = spawn('node', [shrimpPath], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      // 给进程一点时间启动
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 检查进程是否还在运行
+      const isRunning = shrimpProcess.exitCode === null;
+      
+      if (isRunning) {
+        // 进程还在运行，立即结束它
+        shrimpProcess.kill();
+        healthStatus.services.shrimp = {
+          status: 'healthy',
+          details: 'Process started successfully'
+        };
+      } else {
+        healthStatus.services.shrimp = {
+          status: 'unhealthy',
+          error: 'Process failed to start'
+        };
+      }
     } catch (error) {
       // Shrimp MCP服务可能缺少环境变量或配置，标记为部分可用
       healthStatus.services.shrimp = {
