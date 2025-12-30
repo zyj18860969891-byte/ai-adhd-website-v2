@@ -13,13 +13,15 @@ COPY package*.json ./
 # Install dependencies without running lifecycle scripts
 RUN npm install --ignore-scripts
 
-# Bundle app source code
-COPY . .
+# Bundle app source code - only api-server directory will be copied by Railway
+COPY api-server ./api-server
+COPY churnflow-mcp ./churnflow-mcp
+COPY mcp-shrimp-task-manager ./mcp-shrimp-task-manager
 
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
-# Make the startup script executable (it's now in api-server directory)
+# Make the startup script executable
 RUN chmod +x /app/api-server/start-all-services.sh
 
 # Build the TypeScript code for each service separately
