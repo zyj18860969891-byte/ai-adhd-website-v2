@@ -11,7 +11,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies without running lifecycle scripts
-RUN npm install --ignore-scripts
+RUN npm install --ignore-scripts && npm rebuild better-sqlite3
 
 # Bundle app source code
 COPY . .
