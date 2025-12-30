@@ -1,7 +1,6 @@
 # Combined Railway Configuration for API Server and MCP Services
 [build]
 builder = "dockerfile"
-dockerfilePath = "combined-Dockerfile"
 
 [env]
 NODE_ENV = "production"
