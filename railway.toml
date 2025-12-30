@@ -1,6 +1,6 @@
 # Combined Railway Configuration for API Server and MCP Services
 [build]
-builder = "docker"
+builder = "dockerfile"
 dockerfilePath = "combined-Dockerfile"
 
 [env]
