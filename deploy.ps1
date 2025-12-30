@@ -43,8 +43,9 @@ Write-Host "==========================================" -ForegroundColor Green
 Write-Host "✅ 修复了 Docker 构建中的文件路径问题"
 Write-Host "✅ 添加了数据库自动初始化脚本"
 Write-Host "✅ 改进了错误处理，服务可在文件模式下运行"
-Write-Host "✅ 创建了新的 Dockerfile.combined"
+Write-Host "✅ 更新了各个服务的 Dockerfile"
 Write-Host "✅ 修复了 start-all-services.sh 路径问题"
+Write-Host "✅ 修复了 Railway 构建上下文问题"
 Write-Host ""
 
 # 阶段 1: Git 操作

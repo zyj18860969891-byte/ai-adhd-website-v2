@@ -68,7 +68,9 @@
 
 ### 关键文件
 
-- `Dockerfile.combined` - 修复后的组合 Dockerfile
+- `churnflow-mcp/Dockerfile` - 修复后的组合 Dockerfile
+- `mcp-shrimp-task-manager/Dockerfile` - Shrimp MCP 服务 Dockerfile
+- `api-server/Dockerfile` - API 服务器 Dockerfile
 - `railway.toml` - 更新的 Railway 配置
 - `start-all-services.sh` - 修复的启动脚本
 - `init-database.sh` - 数据库初始化脚本

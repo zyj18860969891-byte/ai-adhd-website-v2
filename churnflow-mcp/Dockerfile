@@ -1,3 +1,4 @@
+# ChurnFlow MCP Dockerfile - Combined Services
 FROM node:lts-alpine
 
 # Install necessary build tools and bash
@@ -6,23 +7,35 @@ RUN apk add --no-cache bash
 # Create app directory
 WORKDIR /app
 
-# Install app dependencies
+# Copy package files
 COPY package*.json ./
+COPY churnflow-mcp/package*.json ./churnflow-mcp/
+COPY mcp-shrimp-task-manager/package*.json ./mcp-shrimp-task-manager/
+COPY api-server/package*.json ./api-server/
 
-# Install dependencies
-RUN npm ci
+# Install root dependencies
+RUN npm install --ignore-scripts
 
-# Bundle app source code
+# Install TypeScript compiler and Node.js types
+RUN npm install -g typescript @types/node
+
+# Copy source code
 COPY . .
 
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
-# Build the TypeScript code
-RUN npm run build
+# Make the startup script executable
+RUN chmod +x start-all-services.sh
+RUN chmod +x init-database.sh
 
-# Expose port
-EXPOSE 3008
+# Build each service
+RUN cd churnflow-mcp && npm install @types/node && npm run build
+RUN cd mcp-shrimp-task-manager && npm install @types/node && npm run build
+RUN cd api-server && npm install @types/node && npm run build
 
-# Command to run the application
-CMD [ "npm", "start" ]
+# Expose ports for all services
+EXPOSE 3003 3008 3009
+
+# Command to run all services in the container
+CMD [ "./start-all-services.sh" ]

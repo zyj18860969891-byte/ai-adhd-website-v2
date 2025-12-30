@@ -1,4 +1,4 @@
-# Shrimp Task Manager MCP Dockerfile - Combined Services
+# API Server Dockerfile
 FROM node:lts-alpine
 
 # Install necessary build tools and bash
@@ -9,8 +9,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY churnflow-mcp/package*.json ./churnflow-mcp/
-COPY mcp-shrimp-task-manager/package*.json ./mcp-shrimp-task-manager/
 COPY api-server/package*.json ./api-server/
 
 # Install root dependencies
@@ -29,13 +27,11 @@ RUN chmod +x node_modules/.bin/*
 RUN chmod +x start-all-services.sh
 RUN chmod +x init-database.sh
 
-# Build each service
-RUN cd churnflow-mcp && npm install @types/node && npm run build
-RUN cd mcp-shrimp-task-manager && npm install @types/node && npm run build
+# Build API server
 RUN cd api-server && npm install @types/node && npm run build
 
-# Expose ports for all services
-EXPOSE 3003 3008 3009
+# Expose port for API server
+EXPOSE 3003
 
 # Command to run all services in the container
 CMD [ "./start-all-services.sh" ]
