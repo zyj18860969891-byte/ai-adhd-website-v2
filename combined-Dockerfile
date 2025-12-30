@@ -13,8 +13,8 @@ COPY package*.json ./
 # Install dependencies without running lifecycle scripts
 RUN npm install --ignore-scripts
 
-# Install TypeScript compiler
-RUN npm install -g typescript
+# Install TypeScript compiler and Node.js types
+RUN npm install -g typescript @types/node
 
 # Bundle app source code - only api-server directory will be copied by Railway
 COPY . .
