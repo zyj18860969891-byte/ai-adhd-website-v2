@@ -1,47 +1,30 @@
-{
-  "version": "1.0.0",
-  "collections": {
-    "default": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "inbox": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "projects": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "resources": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "tasks": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    }
+[
+  {
+    "tag": "inbox",
+    "contextType": "inbox",
+    "trackerFile": "/app/churnflow-mcp/data/tracking/inbox.md",
+    "collectionFile": "/app/churnflow-mcp/data/collections/inbox.json",
+    "active": true
   },
-  "tracking": {
-    "default": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "inbox": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "projects": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "resources": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    },
-    "tasks": {
-      "files": [],
-      "lastUpdated": "2025-12-30T16:26:00Z"
-    }
+  {
+    "tag": "projects",
+    "contextType": "project",
+    "trackerFile": "/app/churnflow-mcp/data/tracking/projects.md",
+    "collectionFile": "/app/churnflow-mcp/data/collections/projects.json",
+    "active": true
+  },
+  {
+    "tag": "resources",
+    "contextType": "resource",
+    "trackerFile": "/app/churnflow-mcp/data/tracking/resources.md",
+    "collectionFile": "/app/churnflow-mcp/data/collections/resources.json",
+    "active": true
+  },
+  {
+    "tag": "tasks",
+    "contextType": "task",
+    "trackerFile": "/app/churnflow-mcp/data/tracking/tasks.md",
+    "collectionFile": "/app/churnflow-mcp/data/collections/tasks.json",
+    "active": true
   }
-}
+]
