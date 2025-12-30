@@ -9,7 +9,7 @@
     "start-api": "node src/index.js",
     "start-churnflow": "cd ../churnflow-mcp && npm start",
     "start-shrimp": "cd ../mcp-shrimp-task-manager && npm start",
-    "build": "tsc --project tsconfig.json"
+    "build": "tsc --project tsconfig.json --exclude '**/*.backup.js' --exclude '**/*.backup.js'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
