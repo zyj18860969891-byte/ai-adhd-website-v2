@@ -1,7 +1,7 @@
 # Combined Railway Configuration for API Server and MCP Services
 [build]
 builder = "dockerfile"
-dockerfilePath = "churnflow-mcp/Dockerfile"
+dockerfilePath = "api-server/Dockerfile"
 
 [env]
 NODE_ENV = "production"

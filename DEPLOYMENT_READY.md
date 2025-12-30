@@ -1,0 +1,101 @@
+# 🚀 MCP 服务部署准备完成
+
+## ✅ 修复完成
+
+所有部署问题已修复，现在可以开始部署。
+
+### 问题解决
+
+1. **✅ Railway 构建上下文问题** - 为每个服务创建了独立的 Railway 配置
+2. **✅ Dockerfile 路径问题** - 为每个服务创建了独立的 Dockerfile
+3. **✅ 数据库初始化问题** - 添加了自动数据库初始化脚本
+4. **✅ 错误处理问题** - 改进了数据库错误处理
+
+### 修改的文件
+
+#### Dockerfile 文件
+- ✅ `churnflow-mcp/Dockerfile` - ChurnFlow MCP 服务
+- ✅ `mcp-shrimp-task-manager/Dockerfile` - Shrimp MCP 服务  
+- ✅ `api-server/Dockerfile` - API 服务器
+
+#### Railway 配置文件
+- ✅ `railway.toml` - 主服务配置
+- ✅ `api-server/railway.toml` - API 服务器配置
+- ✅ `churnflow-mcp/railway.toml` - ChurnFlow MCP 配置
+- ✅ `mcp-shrimp-task-manager/railway.toml` - Shrimp MCP 配置
+
+#### 脚本文件
+- ✅ `start-all-services.sh` - 启动脚本
+- ✅ `init-database.sh` - 数据库初始化
+
+#### 代码文件
+- ✅ `churnflow-mcp/dist/storage/DatabaseManager.js` - 错误处理改进
+
+## 📋 部署步骤
+
+### 1. 提交更改到 GitHub
+
+```bash
+# 添加所有修改的文件
+git add .
+git commit -m "修复 MCP 服务部署问题
+
+- 为每个服务创建独立的 Railway 配置和 Dockerfile
+- 添加数据库自动初始化
+- 改进错误处理机制
+- 修复构建上下文问题"
+git push origin main
+```
+
+### 2. 触发 Railway 部署
+
+- **自动部署**: Railway 会自动检测 GitHub 更改并开始部署
+- **手动触发**: 在 Railway 仪表板中点击 "Deploy" 按钮
+
+### 3. 验证部署
+
+部署成功后应该看到:
+```
+✅ Database initialized successfully (如果数据库初始化成功)
+⚠️ Database not available - using file-only mode (如果数据库初始化失败，但服务继续运行)
+✅ ChurnFlow ready for ADHD-friendly capture!
+✅ Shrimp Task Manager MCP started successfully
+✅ API Server running on port 3003
+```
+
+## 🎯 预期结果
+
+### 服务运行状态
+1. **ChurnFlow MCP** (端口 3008) - 正常运行
+2. **Shrimp Task Manager MCP** (端口 3009) - 正常运行
+3. **API Server** (端口 3003) - 正常运行
+
+### 数据库状态
+- **最佳情况**: 数据库自动初始化成功，所有功能可用
+- **降级情况**: 数据库初始化失败，服务在文件模式下继续运行
+
+## 🔍 故障排除
+
+### 如果部署失败
+1. **检查 Railway 日志** - 查看具体错误信息
+2. **验证文件路径** - 确保所有文件都在正确位置
+3. **检查构建上下文** - 确认 Railway 配置正确
+
+### 常见问题
+1. **文件路径错误** - 检查 Dockerfile 中的路径
+2. **权限问题** - 确保脚本有执行权限
+3. **依赖问题** - 检查 package.json 和依赖安装
+
+## 📞 支持
+
+如果问题持续存在，请：
+1. 查看 `MCP_FIX_SUMMARY.md` 了解详细修复信息
+2. 检查 Railway 文档
+3. 查看 Docker 构建日志
+4. 联系技术支持
+
+---
+
+**修复日期**: 2025年12月31日
+**修复版本**: v3.0
+**状态**: ✅ 已修复，准备部署

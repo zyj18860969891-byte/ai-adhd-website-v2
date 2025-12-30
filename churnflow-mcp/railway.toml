@@ -1,0 +1,11 @@
+# ChurnFlow MCP Railway Configuration
+[build]
+builder = "dockerfile"
+
+[env]
+NODE_ENV = "production"
+PORT = "3008"
+
+[deploy]
+numReplicas = 1
+sleepApplication = false

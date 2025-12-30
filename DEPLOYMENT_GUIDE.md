@@ -68,10 +68,18 @@
 
 ### 关键文件
 
-- `churnflow-mcp/Dockerfile` - 修复后的组合 Dockerfile
+#### Dockerfile 文件
+- `churnflow-mcp/Dockerfile` - ChurnFlow MCP 服务 Dockerfile
 - `mcp-shrimp-task-manager/Dockerfile` - Shrimp MCP 服务 Dockerfile
 - `api-server/Dockerfile` - API 服务器 Dockerfile
-- `railway.toml` - 更新的 Railway 配置
+
+#### Railway 配置文件
+- `railway.toml` - 主服务 Railway 配置
+- `api-server/railway.toml` - API 服务器配置
+- `churnflow-mcp/railway.toml` - ChurnFlow MCP 配置
+- `mcp-shrimp-task-manager/railway.toml` - Shrimp MCP 配置
+
+#### 脚本文件
 - `start-all-services.sh` - 修复的启动脚本
 - `init-database.sh` - 数据库初始化脚本
 

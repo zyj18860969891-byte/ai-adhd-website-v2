@@ -58,14 +58,19 @@
 ## 📁 修改的文件
 
 ### Dockerfile 文件
-1. **`churnflow-mcp/Dockerfile`** - 更新为组合服务 Dockerfile
-2. **`mcp-shrimp-task-manager/Dockerfile`** - 已正确配置
+1. **`churnflow-mcp/Dockerfile`** - 更新为独立服务 Dockerfile
+2. **`mcp-shrimp-task-manager/Dockerfile`** - 更新为独立服务 Dockerfile
 3. **`api-server/Dockerfile`** - 新增 API 服务器 Dockerfile
 
-### 配置文件
-1. **`railway.toml`** - 更新 Dockerfile 路径
-2. **`start-all-services.sh`** - 修复路径问题
-3. **`init-database.sh`** - 新增数据库初始化脚本
+### Railway 配置文件
+1. **`railway.toml`** - 更新为指向 api-server/Dockerfile
+2. **`api-server/railway.toml`** - 新增 API 服务器配置
+3. **`churnflow-mcp/railway.toml`** - 新增 ChurnFlow MCP 配置
+4. **`mcp-shrimp-task-manager/railway.toml`** - 新增 Shrimp MCP 配置
+
+### 脚本文件
+1. **`start-all-services.sh`** - 修复路径问题
+2. **`init-database.sh`** - 新增数据库初始化脚本
 
 ### 代码文件
 1. **`churnflow-mcp/dist/storage/DatabaseManager.js`** - 改进错误处理
