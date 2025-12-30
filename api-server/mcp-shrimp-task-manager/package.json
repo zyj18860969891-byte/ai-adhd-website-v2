@@ -1,0 +1,59 @@
+{
+  "name": "mcp-shrimp-task-manager",
+  "version": "1.0.21",
+  "description": "Shrimp Task Manager is a task tool built for AI Agents, emphasizing chain-of-thought, reflection, and style consistency. It converts natural language into structured dev tasks with dependency tracking and iterative refinement, enabling agent-like developer behavior in reasoning AI systems",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cjo4m06/mcp-shrimp-task-manager"
+  },
+  "bugs": {
+    "url": "https://github.com/cjo4m06/mcp-shrimp-task-manager/issues"
+  },
+  "homepage": "https://cjo4m06.github.io/mcp-shrimp-task-manager",
+  "bin": {
+    "mcp-shrimp-task-manager": "./dist/custom-mcp-server.js"
+  },
+  "main": "dist/custom-mcp-server.js",
+  "scripts": {
+    "build": "npm run fix-imports && tsc && copyfiles -u 1 \"src/**/*.md\" dist && copyfiles -u 1 \"src/public/**/*\" dist && node scripts/add-shebang.js",
+    "fix-imports": "node scripts/fix-imports.js",
+    "build:mcp": "npx tsc src/custom-mcp-server.ts --outDir dist --module NodeNext --target ES2022 --allowSyntheticDefaultImports true --skipLibCheck true",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/custom-mcp-server.js",
+    "start:legacy": "node dist/index.js",
+    "enhanced": "node start-enhanced-with-env.js",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "check-config": "node check-config.js",
+    "start-proxy": "node start-with-proxy.js",
+    "railway": "npm run build:mcp && npm start"
+  },
+  "keywords": [
+    "mcp",
+    "task-manager",
+    "agent",
+    "workflow"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "get-port": "^7.1.0",
+    "openai": "^4.54.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.1",
+    "@types/node": "^20.8.2",
+    "@types/uuid": "^9.0.6",
+    "copyfiles": "^2.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.2.2",
+    "vitest": "^1.0.0"
+  }
+}

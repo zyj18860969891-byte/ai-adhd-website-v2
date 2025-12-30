@@ -1,0 +1,13 @@
+# Shrimp Task Manager MCP Railway Configuration
+[build]
+builder = "nixpacks"
+
+[env]
+NODE_ENV = "production"
+PORT = "3009"
+
+[run]
+startCommand = "npm run railway"
+
+[deploy]
+startCommand = "npm run railway"

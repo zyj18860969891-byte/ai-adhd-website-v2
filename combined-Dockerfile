@@ -14,15 +14,13 @@ COPY package*.json ./
 RUN npm install --ignore-scripts
 
 # Bundle app source code - only api-server directory will be copied by Railway
-COPY api-server ./api-server
-COPY churnflow-mcp ./churnflow-mcp
-COPY mcp-shrimp-task-manager ./mcp-shrimp-task-manager
+COPY . .
 
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
 # Make the startup script executable
-RUN chmod +x /app/api-server/start-all-services.sh
+RUN chmod +x /app/start-all-services.sh
 
 # Build the TypeScript code for each service separately
 RUN cd api-server && npm run build
@@ -33,4 +31,4 @@ RUN cd mcp-shrimp-task-manager && npm run build
 EXPOSE 3003 3008 3009
 
 # Command to run all services in the container
-CMD [ "/app/api-server/start-all-services.sh" ]
+CMD [ "/app/start-all-services.sh" ]

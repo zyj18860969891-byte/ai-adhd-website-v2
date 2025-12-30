@@ -1,0 +1,10 @@
+{
+  "collectionsPath": "./data/collections",
+  "trackingPath": "./data/tracking", 
+  "crossrefPath": "./data/crossref/crossref.json",
+  "aiProvider": "openai",
+  "confidenceThreshold": 0.7,
+  "aiApiKey": "${OPENAI_API_KEY}",
+  "aiModel": "gpt-5-mini-2025-08-07",
+  "aiBaseUrl": "https://api.openai.com/v1"
+}
