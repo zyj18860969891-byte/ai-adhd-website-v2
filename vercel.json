@@ -7,7 +7,10 @@
     }
   ],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://api-server-production.up.railway.app",
+    "NEXT_PUBLIC_API_URL": "https://ai-adhd-website-v2-production.up.railway.app/api",
+    "NEXT_PUBLIC_WEBSOCKET_URL": "wss://ai-adhd-website-v2-production.up.railway.app",
+    "NEXT_PUBLIC_TASK_MANAGER_API": "https://ai-adhd-website-v2-production.up.railway.app/api",
+    "NEXT_PUBLIC_ADHD_REMINDER_API": "https://ai-adhd-website-v2-production.up.railway.app/api",
     "NEXT_PUBLIC_MCP_CHURNFLOW_URL": "https://churnflow-mcp-production.up.railway.app",
     "NEXT_PUBLIC_MCP_SHRIMP_URL": "https://shrimp-task-manager-production.up.railway.app"
   }
