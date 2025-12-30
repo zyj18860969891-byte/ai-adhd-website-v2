@@ -1,7 +1,6 @@
 # Combined Railway Configuration for API Server and MCP Services
 [build]
 builder = "docker"
-dockerfilePath = "combined-Dockerfile"
 
 [env]
 NODE_ENV = "production"
@@ -10,9 +9,6 @@ CHURNFLOW_PORT = "3008"
 SHRIMP_PORT = "3009"
 CHURNFLOW_PATH = "/app/churnflow-mcp/dist/index.js"
 SHRIMP_PATH = "/app/mcp-shrimp-task-manager/dist/custom-mcp-server.js"
-
-[run]
-startCommand = "sh -c './start-all-services.sh'"
 
 [deploy]
 numReplicas = 1
