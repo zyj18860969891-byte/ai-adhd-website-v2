@@ -104,13 +104,19 @@ app.get('/api/health', async (req, res) => {
     };
 
     // 确定整体状态
-    const allHealthy = Object.values(healthStatus.services).every(
-      service => service.status === 'healthy'
+    // 只要 API 服务器本身在运行，就返回 200，即使 MCP 服务有问题
+    const criticalServicesHealthy = true; // API 服务器本身总是健康的
+    const anyServiceUnhealthy = Object.values(healthStatus.services).some(
+      service => service.status === 'unhealthy'
     );
     
-    healthStatus.overallStatus = allHealthy ? 'healthy' : 'degraded';
+    healthStatus.overallStatus = anyServiceUnhealthy ? 'degraded' : 'healthy';
+    healthStatus.message = anyServiceUnhealthy 
+      ? 'API服务器正常运行，但部分MCP服务不可用'
+      : '所有服务正常运行';
     
-    res.status(allHealthy ? 200 : 503).json(healthStatus);
+    // 总是返回 200，因为我们不希望在 MCP 服务有问题时让负载均衡器认为 API 服务器挂了
+    res.status(200).json(healthStatus);
   } catch (error) {
     console.error('健康检查错误:', error);
     res.status(500).json({

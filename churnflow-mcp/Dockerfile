@@ -10,8 +10,8 @@ WORKDIR /app
 # Copy package files from churnflow-mcp directory
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies and rebuild native modules
+RUN npm ci && npm rebuild better-sqlite3
 
 # Bundle app source code
 COPY . .

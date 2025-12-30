@@ -13,6 +13,8 @@
 5. **✅ TypeScript 构建问题** - 添加构建失败时的容错处理
 6. **✅ 数据库初始化问题** - 添加了自动数据库初始化脚本
 7. **✅ 错误处理问题** - 改进了数据库错误处理
+8. **✅ better-sqlite3 架构不匹配问题** - 在 Dockerfile 中添加 npm rebuild better-sqlite3
+9. **✅ API 服务器健康检查问题** - 修改健康检查逻辑，支持优雅降级
 
 ### 修改的文件
 
@@ -94,6 +96,50 @@ git push origin main
 
 ---
 
+## 🎉 最新修复更新
+
+### 关键问题解决
+
+#### 🔧 修复 8: better-sqlite3 架构不匹配
+- **问题**: ChurnFlow MCP 服务无法启动，显示 "Error loading shared library: Exec format error"
+- **原因**: better-sqlite3 原生模块在开发环境编译，与 Alpine Linux 生产环境架构不匹配
+- **解决**: 在 `churnflow-mcp/Dockerfile` 中添加 `npm rebuild better-sqlite3` 命令
+- **影响**: ChurnFlow MCP 服务现在可以正常启动并使用数据库功能
+
+#### 🔧 修复 9: API 服务器健康检查优化
+- **问题**: 当 MCP 服务不可用时，API 服务器返回 503，导致负载均衡器移除服务
+- **原因**: 健康检查逻辑过于严格，任何 MCP 服务问题都会导致整体不健康
+- **解决**: 修改 `api-server/src/index.js` 中的健康检查逻辑，支持优雅降级
+- **影响**: API 服务器现在即使在某些 MCP 服务不可用时也能继续服务，提高系统可用性
+
+### 验证工具
+
+创建了 `test-service-health.js` 脚本用于验证服务状态：
+
+```bash
+# 运行健康测试
+node test-service-health.js
+```
+
+该脚本会：
+- 测试 API 服务器健康检查端点
+- 独立测试每个 MCP 服务的进程启动能力
+- 提供详细的诊断信息
+
+详细验证步骤请参考 `DEPLOYMENT_VERIFICATION_GUIDE.md`
+
+### 健康检查行为变化
+
+**之前**:
+- MCP 服务有问题 → 返回 503 → 负载均衡器移除服务
+- 用户完全无法访问 API
+
+**现在**:
+- MCP 服务有问题 → 返回 200，overallStatus 为 "degraded" → 服务保持在线
+- 用户可以访问不依赖 MCP 服务的功能
+- 系统整体可用性显著提高
+
 **修复日期**: 2025年12月31日
+**最后更新**: 2025年12月31日 - 添加 better-sqlite3 和健康检查修复
 **修复版本**: v4.0 (最终版本)
 **状态**: ✅ 已修复，准备部署
