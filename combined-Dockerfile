@@ -19,8 +19,8 @@ COPY . .
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
-# Make the startup script executable (it should be in /app after COPY . .)
-RUN test -f start-all-services.sh && chmod +x start-all-services.sh || echo "start-all-services.sh not found in /app"
+# Make the startup script executable (explicitly check in /app)
+RUN if [ -f /app/start-all-services.sh ]; then chmod +x /app/start-all-services.sh; else echo "Checking current directory:"; pwd; ls -la; echo "Looking for start-all-services.sh:"; find . -name "start-all-services.sh" 2>/dev/null; exit 1; fi
 
 # Build the TypeScript code for each service separately
 RUN cd api-server && npm run build
