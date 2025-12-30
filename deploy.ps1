@@ -5,12 +5,13 @@
 
 .DESCRIPTION
     自动化部署流程，包括代码推送、Railway 和 Vercel 部署配置
+    包含 MCP 服务修复和数据库初始化
 
 .AUTHOR
     GitHub Copilot
 
 .DATE
-    2025年12月28日
+    2025年12月31日
 #>
 
 param(
@@ -23,6 +24,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "🚀 ADHD 生产力工具平台部署脚本" -ForegroundColor Cyan
+Write-Host "🔧 MCP 服务修复版本" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -34,6 +36,16 @@ if (-not (Test-Path "package.json")) {
     Write-Host "❌ 错误: 请在项目根目录执行此脚本" -ForegroundColor Red
     exit 1
 }
+
+# 显示修复摘要
+Write-Host "`n🔧 MCP 服务修复摘要:" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Green
+Write-Host "✅ 修复了 Docker 构建中的文件路径问题"
+Write-Host "✅ 添加了数据库自动初始化脚本"
+Write-Host "✅ 改进了错误处理，服务可在文件模式下运行"
+Write-Host "✅ 创建了新的 Dockerfile.combined"
+Write-Host "✅ 修复了 start-all-services.sh 路径问题"
+Write-Host ""
 
 # 阶段 1: Git 操作
 function Invoke-GitOperations {

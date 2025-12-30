@@ -4,9 +4,13 @@
 
 echo "Starting all services..."
 
+# 初始化数据库
+echo "Initializing database..."
+./init-database.sh
+
 # 启动ChurnFlow MCP服务
 echo "Starting ChurnFlow MCP Service..."
-cd /app/churnflow-mcp
+cd churnflow-mcp
 npm run start &
 CHURNFLOW_PID=$!
 echo "ChurnFlow MCP PID: $CHURNFLOW_PID"
@@ -16,7 +20,7 @@ sleep 5
 
 # 启动Shrimp Task Manager MCP服务
 echo "Starting Shrimp Task Manager MCP Service..."
-cd /app/mcp-shrimp-task-manager
+cd ../mcp-shrimp-task-manager
 # 使用 nohup 和重定向来防止 stdin 结束
 nohup npm run start > /tmp/shrimp-mcp.log 2>&1 &
 SHRIMP_PID=$!
@@ -28,7 +32,7 @@ sleep 10
 
 # 启动API Server
 echo "Starting API Server..."
-cd /app/api-server
+cd ../api-server
 npm run start-api &
 API_PID=$!
 echo "API Server PID: $API_PID"

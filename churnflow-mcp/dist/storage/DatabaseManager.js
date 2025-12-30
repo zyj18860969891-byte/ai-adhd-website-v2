@@ -40,10 +40,12 @@ export class DatabaseManager {
             // Verify database exists and is accessible
             await this.verifyDatabaseSetup();
             this.isInitialized = true;
+            console.log('✅ Database initialized successfully');
         }
         catch (error) {
-            console.error('❌ Database not available:', error);
-            throw error;
+            console.error('⚠️ Database not available - using file-only mode. Run \'npm run db:setup\' to enable database features.');
+            this.isInitialized = false;
+            // Don't throw error - allow service to continue in degraded mode
         }
     }
     async verifyDatabaseSetup() {
