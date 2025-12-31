@@ -11,6 +11,14 @@ SHRIMP_PORT = "3009"
 CHURNFLOW_PATH = "/app/churnflow-mcp/dist/index.js"
 SHRIMP_PATH = "/app/mcp-shrimp-task-manager/dist/custom-mcp-server.js"
 
+# API Server Environment Variables
+API_BASE_URL = "https://ai-adhd-website-v2-production.up.railway.app/api"
+WEBSOCKET_URL = "wss://ai-adhd-website-v2-production.up.railway.app"
+TASK_MANAGER_API = "https://ai-adhd-website-v2-production.up.railway.app/api"
+ADHD_REMINDER_API = "https://ai-adhd-website-v2-production.up.railway.app/api"
+MCP_CHURNFLOW_URL = "https://churnflow-mcp-production.up.railway.app"
+MCP_SHRIMP_URL = "https://shrimp-task-manager-production.up.railway.app"
+
 [deploy]
 numReplicas = 1
 sleepApplication = false

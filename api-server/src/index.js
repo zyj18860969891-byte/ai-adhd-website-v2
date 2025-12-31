@@ -17,6 +17,21 @@ app.use(cors());
 app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Root path handler
+app.get('/', (req, res) => {
+  res.json({
+    message: 'AI ADHD Website API Server',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      mcpHealth: '/api/mcp-health',
+      services: '/api/services'
+    }
+  });
+});
+
 // API 路由
 
 // 健康检查端点 - 检查所有MCP服务状态
@@ -451,10 +466,6 @@ async function handleChurnFlowAction(action, data) {
   }
 }
 
-
-
-
-
 // Express路由
 app.post('/api/mcp/churnflow', async (req, res) => {
   try {
@@ -489,342 +500,24 @@ app.post('/api/mcp/reminder', async (req, res) => {
   }
 });
 
-// 启动服务器
-const PORT = process.env.PORT || 3000;
+// 根路径路由 - 返回欢迎信息
+app.get('/', (req, res) => {
+  res.json({
+    message: 'AI ADHD Website API Server',
+    version: '2.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      churnflow: '/api/mcp/churnflow',
+      shrimp: '/api/mcp/shrimp',
+      reminder: '/api/mcp/reminder'
+    }
+  });
+});
+
+// 启动服务器 - 使用3003端口与Railway配置一致
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
   console.log(`API服务器运行在端口 ${PORT}`);
-});
-async function handleShrimpAction(action, data) {
-  const mcpClient = new StdioMCPClient('../../mcp-shrimp-task-manager', {
-    logger: console,
-    requestTimeout: 180000 // 增加到3分钟，给AI足够时间处理
-  });
-
-try {
-      await mcpClient.connect();
-
-      switch (action) {
-        case 'decompose':
-          // 调用Shrimp MCP服务的split_tasks工具
-          const taskDescription = data.task || data.projectDescription;
-          const structuredTasks = JSON.stringify([
-            {
-              "name": "用户需求分析与系统设计",
-              "description": taskDescription,
-              "implementationGuide": "根据用户需求进行系统分析和架构设计",
-              "notes": "需要综合考虑技术栈选择、系统架构和用户体验",
-              "dependencies": [],
-              "relatedFiles": [],
-              "verificationCriteria": "设计方案完整且符合用户需求"
-            }
-          ]);
-          
-          try {
-            const result = await mcpClient.callTool('split_tasks', {
-              updateMode: 'clearAllTasks',
-              tasksRaw: structuredTasks,
-              globalAnalysisResult: data.globalAnalysisResult || data.projectContext || ''
-            });
-
-            // 解析MCP服务返回的结果
-            if (result && result.content) {
-              const content = result.content[0] || result.content;
-              if (typeof content === 'string') {
-                try {
-                  const parsedResult = JSON.parse(content);
-                  return {
-                    originalTask: data.task || data.projectDescription,
-                    subtasks: parsedResult.tasks || parsedResult.subtasks,
-                    estimatedTotalTime: parsedResult.estimatedTotalTime,
-                    difficulty: parsedResult.difficulty,
-                    focusLevel: parsedResult.focusLevel,
-                    success: true,
-                    message: parsedResult.message,
-                    source: 'shrimp_mcp'
-                  };
-                } catch (e) {
-                  console.warn('Shrimp MCP返回无效JSON，使用fallback:', e.message);
-                  // 继续执行fallback逻辑
-                }
-              }
-            }
-          } catch (mcpError) {
-            console.warn('Shrimp MCP服务调用失败，使用智能fallback:', mcpError.message);
-            // 继续执行fallback逻辑
-          }
-
-          // 智能fallback：基于任务描述生成基础任务分解
-          return generateFallbackTasks(taskDescription);      case 'status':
-        const statusResult = await mcpClient.callTool('list_tasks', {});
-        if (statusResult && statusResult.content) {
-          const content = statusResult.content[0] || statusResult.content;
-          if (typeof content === 'string') {
-            try {
-              const parsedResult = JSON.parse(content);
-              const tasks = parsedResult.tasks || parsedResult.content || [];
-              const activeTasks = tasks.filter(task => !task.completed).length;
-              const completedSubtasks = tasks.filter(task => task.completed).length;
-
-              return {
-                activeTasks: activeTasks,
-                completedSubtasks: completedSubtasks,
-                totalSubtasks: tasks.length,
-                productivityScore: tasks.length > 0 ? Math.round((completedSubtasks / tasks.length) * 100) : 0
-              };
-            } catch (e) {
-              throw new Error(`MCP服务返回无效JSON: ${content}`);
-            }
-          }
-        }
-
-        throw new Error('MCP服务未返回有效结果');
-
-      default:
-        throw new Error('Unknown action');
-    }
-  } catch (error) {
-    console.error('Shrimp MCP service error:', error);
-    throw error;
-  } finally {
-    await mcpClient.disconnect();
-  }
-}
-
-async function handleReminderAction(action, data) {
-  // Reminder MCP服务不存在，返回明确错误
-  throw new Error('Reminder MCP服务未实现或不存在');
-}
-
-// 智能fallback任务生成器
-function generateFallbackTasks(taskDescription) {
-  console.log('使用智能fallback生成任务分解:', taskDescription);
-  
-  // 根据任务描述生成基础任务分解
-  const lowerTask = taskDescription.toLowerCase();
-  
-  // 检测常见项目类型并生成相应的任务分解
-  let subtasks = [];
-  
-  if (lowerTask.includes('todo') || lowerTask.includes('待办') || lowerTask.includes('任务管理')) {
-    subtasks = [
-      {
-        name: '设计数据库模型',
-        description: '设计待办事项应用的数据表结构，包括任务表、用户表等',
-        estimatedTime: '2-3小时',
-        difficulty: '简单',
-        dependencies: []
-      },
-      {
-        name: '实现后端API',
-        description: '开发任务CRUD API，包括创建、读取、更新、删除任务的功能',
-        estimatedTime: '3-4小时',
-        difficulty: '中等',
-        dependencies: ['设计数据库模型']
-      },
-      {
-        name: '创建前端界面',
-        description: '开发React组件，包括任务列表、添加任务表单、任务详情页面',
-        estimatedTime: '3-5小时',
-        difficulty: '中等',
-        dependencies: ['实现后端API']
-      },
-      {
-        name: '添加状态管理',
-        description: '集成状态管理库（如Redux或Context API），管理任务状态',
-        estimatedTime: '2-3小时',
-        difficulty: '中等',
-        dependencies: ['创建前端界面']
-      },
-      {
-        name: '实现用户认证',
-        description: '添加用户登录注册功能，实现任务权限管理',
-        estimatedTime: '3-4小时',
-        difficulty: '中等',
-        dependencies: ['设计数据库模型']
-      }
-    ];
-  } else if (lowerTask.includes('user') && lowerTask.includes('register') || 
-             lowerTask.includes('用户') && lowerTask.includes('注册')) {
-    subtasks = [
-      {
-        name: '设计用户数据模型',
-        description: '设计用户表结构，包括用户名、邮箱、密码等字段',
-        estimatedTime: '1-2小时',
-        difficulty: '简单',
-        dependencies: []
-      },
-      {
-        name: '实现注册API',
-        description: '开发用户注册后端API，包括密码加密和邮箱验证',
-        estimatedTime: '3-4小时',
-        difficulty: '中等',
-        dependencies: ['设计用户数据模型']
-      },
-      {
-        name: '创建注册表单',
-        description: '开发前端注册表单组件，包括输入验证和错误处理',
-        estimatedTime: '2-3小时',
-        difficulty: '简单',
-        dependencies: ['实现注册API']
-      },
-      {
-        name: '实现邮箱验证',
-        description: '添加邮箱验证功能，发送验证邮件并处理验证逻辑',
-        estimatedTime: '2-3小时',
-        difficulty: '中等',
-        dependencies: ['实现注册API']
-      },
-      {
-        name: '添加前端验证',
-        description: '实现实时表单验证和用户友好的错误提示',
-        estimatedTime: '1-2小时',
-        difficulty: '简单',
-        dependencies: ['创建注册表单']
-      }
-    ];
-  } else if (lowerTask.includes('blog') || lowerTask.includes('博客')) {
-    subtasks = [
-      {
-        name: '设计博客数据模型',
-        description: '设计文章表、分类表、标签表等数据库结构',
-        estimatedTime: '2-3小时',
-        difficulty: '简单',
-        dependencies: []
-      },
-      {
-        name: '实现文章CRUD API',
-        description: '开发文章的创建、读取、更新、删除API',
-        estimatedTime: '4-5小时',
-        difficulty: '中等',
-        dependencies: ['设计博客数据模型']
-      },
-      {
-        name: '创建博客前端页面',
-        description: '开发文章列表页、文章详情页、管理页面',
-        estimatedTime: '4-6小时',
-        difficulty: '中等',
-        dependencies: ['实现文章CRUD API']
-      },
-      {
-        name: '实现富文本编辑器',
-        description: '集成Markdown编辑器，支持文章格式化和图片上传',
-        estimatedTime: '3-4小时',
-        difficulty: '中等',
-        dependencies: ['创建博客前端页面']
-      },
-      {
-        name: '添加评论功能',
-        description: '实现文章评论系统，包括评论显示和管理',
-        estimatedTime: '2-3小时',
-        difficulty: '中等',
-        dependencies: ['创建博客前端页面']
-      }
-    ];
-  } else {
-    // 通用任务分解模式
-    subtasks = [
-      {
-        name: '需求分析与规划',
-        description: '分析项目需求，制定开发计划和架构设计',
-        estimatedTime: '2-4小时',
-        difficulty: '中等',
-        dependencies: []
-      },
-      {
-        name: '数据库设计与建模',
-        description: '设计数据库表结构，建立数据模型和关系',
-        estimatedTime: '2-3小时',
-        difficulty: '中等',
-        dependencies: ['需求分析与规划']
-      },
-      {
-        name: '后端API开发',
-        description: '实现后端业务逻辑和RESTful API接口',
-        estimatedTime: '4-6小时',
-        difficulty: '中等',
-        dependencies: ['数据库设计与建模']
-      },
-      {
-        name: '前端界面开发',
-        description: '开发用户界面，实现交互逻辑和数据处理',
-        estimatedTime: '4-6小时',
-        difficulty: '中等',
-        dependencies: ['后端API开发']
-      },
-      {
-        name: '集成测试与优化',
-        description: '进行系统测试，优化性能和用户体验',
-        estimatedTime: '2-3小时',
-        difficulty: '中等',
-        dependencies: ['前端界面开发']
-      }
-    ];
-  }
-
-  // 计算总体信息
-  const totalHours = subtasks.reduce((sum, task) => {
-    const timeMatch = task.estimatedTime.match(/(\d+)-(\d+)/);
-    if (timeMatch) {
-      return sum + Math.ceil((parseInt(timeMatch[1]) + parseInt(timeMatch[2])) / 2);
-    }
-    return sum + 2; // 默认2小时
-  }, 0);
-
-  return {
-    originalTask: taskDescription,
-    subtasks: subtasks,
-    estimatedTotalTime: `${totalHours}小时`,
-    difficulty: subtasks.some(t => t.difficulty === '中等') ? '中等' : '简单',
-    focusLevel: totalHours > 15 ? '高' : totalHours > 8 ? '中' : '低',
-    success: true,
-    message: '任务分解完成（使用智能fallback模式）',
-    source: 'fallback'
-  };
-}
-
-// 计算下次提醒时间
-function calculateNextReminder(time) {
-  const now = new Date();
-  const reminderTime = new Date(time);
-  
-  if (reminderTime <= now) {
-    // 如果提醒时间已过，设置为明天同一时间
-    reminderTime.setDate(reminderTime.getDate() + 1);
-  }
-  
-  return reminderTime.toISOString();
-}
-
-// Express路由
-app.post('/api/mcp/churnflow', async (req, res) => {
-  try {
-    const { action, data } = req.body;
-    const result = await handleChurnFlowAction(action, data);
-    res.json(result);
-  } catch (error) {
-    console.error('ChurnFlow API error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/mcp/shrimp', async (req, res) => {
-  try {
-    const { action, data } = req.body;
-    const result = await handleShrimpAction(action, data);
-    res.json(result);
-  } catch (error) {
-    console.error('Shrimp API error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/mcp/reminder', async (req, res) => {
-  try {
-    const { action, data } = req.body;
-    const result = await handleReminderAction(action, data);
-    res.json(result);
-  } catch (error) {
-    console.error('Reminder API error:', error);
-    res.status(500).json({ error: error.message });
-  }
 });
