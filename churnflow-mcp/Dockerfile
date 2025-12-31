@@ -11,7 +11,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies and rebuild better-sqlite3 from source for Alpine
-RUN npm ci --verbose && npm rebuild better-sqlite3 --build-from-source --verbose
+RUN npm ci --verbose && rm -rf node_modules/better-sqlite3 && npm install better-sqlite3 --build-from-source --verbose
 
 # Bundle app source code
 COPY . .
