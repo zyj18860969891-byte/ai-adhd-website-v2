@@ -1,8 +1,13 @@
 # ChurnFlow MCP Dockerfile
-FROM node:lts-alpine
+# 使用基于 glibc 的 Node.js 镜像以避免 better-sqlite3 架构问题
+FROM node:lts-slim
 
-# Install necessary build tools including python3, make, g++, and bash
-RUN apk add --no-cache bash python3 make g++
+# 安装必要的构建工具
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
 WORKDIR /app
@@ -10,8 +15,8 @@ WORKDIR /app
 # Copy package files from churnflow-mcp directory
 COPY package*.json ./
 
-# Install dependencies and rebuild better-sqlite3 from source for Alpine
-RUN npm ci --verbose && rm -rf node_modules/better-sqlite3 && npm install better-sqlite3 --build-from-source --verbose
+# Install dependencies - better-sqlite3 将在标准 glibc 环境中正确编译
+RUN npm ci --verbose
 
 # Bundle app source code
 COPY . .
