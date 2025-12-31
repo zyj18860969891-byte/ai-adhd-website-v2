@@ -1,8 +1,8 @@
 # ChurnFlow MCP Dockerfile
 FROM node:lts-alpine
 
-# Install necessary build tools and bash
-RUN apk add --no-cache bash
+# Install necessary build tools including python3, make, g++, and bash
+RUN apk add --no-cache bash python3 make g++
 
 # Create app directory
 WORKDIR /app
@@ -10,8 +10,8 @@ WORKDIR /app
 # Copy package files from churnflow-mcp directory
 COPY package*.json ./
 
-# Install dependencies and rebuild native modules
-RUN npm ci && npm rebuild better-sqlite3
+# Install dependencies and rebuild better-sqlite3 from source for Alpine
+RUN npm ci && npm rebuild better-sqlite3 --build-from-source
 
 # Bundle app source code
 COPY . .
