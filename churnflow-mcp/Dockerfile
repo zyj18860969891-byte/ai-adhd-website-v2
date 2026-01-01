@@ -16,7 +16,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies - better-sqlite3 将在标准 glibc 环境中正确编译
-RUN npm ci --verbose && npm rebuild better-sqlite3 --build-from-source --verbose
+# 清除任何可能的缓存并强制重新安装
+RUN npm cache clean --force && npm ci --verbose
 
 # Bundle app source code
 COPY . .
