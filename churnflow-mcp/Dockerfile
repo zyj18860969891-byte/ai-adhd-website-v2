@@ -15,10 +15,9 @@ WORKDIR /app
 # Copy package files from churnflow-mcp directory
 COPY package*.json ./
 
-# Install dependencies - better-sqlite3 将在标准 glibc 环境中正确编译
-# 清除任何可能的缓存并强制重新安装
-RUN npm cache clean --force && npm ci --verbose
-
+# Install dependencies without running lifecycle scripts, then rebuild better-sqlite3
+# This ensures the native module is compiled for the target architecture
+RUN npm install --ignore-scripts && npm rebuild better-sqlite3
 # Bundle app source code
 COPY . .
 
@@ -27,12 +26,6 @@ RUN chmod +x node_modules/.bin/*
 
 # Build the TypeScript code
 RUN npm run build
-
-# Expose port
-EXPOSE 3008
-
-# Command to run the application
-CMD [ "npm", "start" ]
 
 # Expose port
 EXPOSE 3008
