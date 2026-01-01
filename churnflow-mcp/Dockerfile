@@ -1,8 +1,8 @@
 # ChurnFlow MCP Dockerfile
-# ä½¿ç”¨åŸºäº glibc çš„ Node.js é•œåƒä»¥é¿å… better-sqlite3 æ¶æ„é—®é¢˜
+# Ê¹ÓÃ»ùÓÚ glibc µÄ Node.js ¾µÏñÒÔ±ÜÃâ better-sqlite3 ¼Ü¹¹ÎÊÌâ
 FROM node:lts-slim
 
-# å®‰è£…å¿…è¦çš„æ„å»ºå·¥å…·
+# °²×°±ØÒªµÄ¹¹½¨¹¤¾ß
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
@@ -20,32 +20,16 @@ COPY package*.json ./
 # Force rebuild from source with verbose output to ensure proper compilation
 RUN npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source --verbose
 
+# Verify better-sqlite3 was compiled correctly
+RUN ls -la node_modules/better-sqlite3/build/Release/
 # Bundle app source code
 COPY . .
-
-# Build the TypeScript code
-RUN npm run build
 
 # Fix permissions for node_modules binaries
 RUN chmod +x node_modules/.bin/*
 
-# Expose port
-EXPOSE 3008
-
-# Command to run the application
-CMD [ "npm", "start" ]
-
-# Expose port
-EXPOSE 3008
-
-# Command to run the application
-CMD [ "npm", "start" ]
-
-# Expose port
-EXPOSE 3008
-
-# Command to run the application
-CMD [ "npm", "start" ]
+# Build the TypeScript code
+RUN npm install typescript --save-dev && npm run build
 
 # Expose port
 EXPOSE 3008
