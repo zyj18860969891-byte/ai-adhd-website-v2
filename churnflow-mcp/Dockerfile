@@ -39,3 +39,21 @@ EXPOSE 3008
 
 # Command to run the application
 CMD [ "npm", "start" ]
+
+# Expose port
+EXPOSE 3008
+
+# Command to run the application
+CMD [ "npm", "start" ]
+
+# Expose port
+EXPOSE 3008
+
+# Command to run the application
+CMD [ "npm", "start" ]
+
+# Expose port
+EXPOSE 3008
+
+# Command to run the application
+CMD [ "npm", "start" ]
