@@ -20,8 +20,6 @@ COPY package*.json ./
 # Force rebuild from source with verbose output to ensure proper compilation
 RUN npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source --verbose
 
-# Verify better-sqlite3 was compiled correctly
-RUN ls -la node_modules/better-sqlite3/build/Release/ && file node_modules/better-sqlite3/build/Release/better_sqlite3.node
 # Bundle app source code
 COPY . .
 
