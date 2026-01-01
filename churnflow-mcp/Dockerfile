@@ -19,14 +19,17 @@ COPY package*.json ./
 # This ensures the native module is compiled for the target architecture
 # Force rebuild from source with verbose output to ensure proper compilation
 RUN npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source --verbose
+
+# Verify better-sqlite3 was compiled correctly
+RUN ls -la node_modules/better-sqlite3/build/Release/ && file node_modules/better-sqlite3/build/Release/better_sqlite3.node
 # Bundle app source code
 COPY . .
 
-# Fix permissions for node_modules binaries
-RUN chmod +x node_modules/.bin/*
-
 # Build the TypeScript code
 RUN npm run build
+
+# Fix permissions for node_modules binaries
+RUN chmod +x node_modules/.bin/*
 
 # Expose port
 EXPOSE 3008
