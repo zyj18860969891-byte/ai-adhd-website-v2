@@ -17,7 +17,8 @@ COPY package*.json ./
 
 # Install dependencies without running lifecycle scripts, then rebuild better-sqlite3
 # This ensures the native module is compiled for the target architecture
-RUN npm install --ignore-scripts && npm rebuild better-sqlite3
+# Force rebuild from source with verbose output to ensure proper compilation
+RUN npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source --verbose
 # Bundle app source code
 COPY . .
 
