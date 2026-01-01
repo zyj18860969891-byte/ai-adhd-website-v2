@@ -47,8 +47,13 @@ export class DatabaseManager {
       fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    this.sqlite = new Database(dbPath);
-    this.db = drizzle(this.sqlite);
+    try {
+      this.sqlite = new Database(dbPath);
+      this.db = drizzle(this.sqlite);
+    } catch (error) {
+      console.error('❌ Failed to initialize database:', error);
+      throw error;
+    }
   }
 
   async initialize(): Promise<void> {
@@ -79,6 +84,7 @@ export class DatabaseManager {
     try {
       await this.db.select().from(captures).limit(1);
     } catch (error) {
+      console.error('❌ Database setup verification failed:', error);
       throw new Error('Database not set up. Run: npm run db:setup');
     }
   }
