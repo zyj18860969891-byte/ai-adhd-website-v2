@@ -1,7 +1,8 @@
 # ChurnFlow MCP Railway Configuration
 [build]
-builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+builder = "nixpacks"  # 使用 Railway 的标准构建器
+buildCommand = "npm install && npm rebuild better-sqlite3 --build-from-source && npx tsc"
+startCommand = "npm start"
 
 [env]
 NODE_ENV = "production"
