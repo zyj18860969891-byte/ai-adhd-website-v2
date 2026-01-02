@@ -130,25 +130,45 @@ export default class StdioMCPClient extends EventEmitter {
         params
       };
       
-      const onData = (data) => {
-        try {
-          const response = JSON.parse(data.toString());
-          if (response.id === requestId) {
-            this.process.stdout.off('data', onData);
-            clearTimeout(timeout);
-            
-            if (response.error) {
-              reject(new Error(response.error.message));
-            } else {
-              resolve(response.result);
+        const onData = (data) => {
+          try {
+            const str = data.toString();
+            // 尝试解析 JSON，处理可能的 emoji
+            const response = JSON.parse(str);
+            if (response.id === requestId) {
+              this.process.stdout.off('data', onData);
+              clearTimeout(timeout);
+
+              if (response.error) {
+                reject(new Error(response.error.message));
+              } else {
+                resolve(response.result);
+              }
             }
+          } catch (error) {
+            // 如果解析失败，可能是日志输出，忽略
+            if (str.trim().startsWith('{')) {
+              // 可能是 JSON 但包含非法字符，尝试清理
+              try {
+                const cleaned = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+                const response = JSON.parse(cleaned);
+                if (response.id === requestId) {
+                  this.process.stdout.off('data', onData);
+                  clearTimeout(timeout);
+                  
+                  if (response.error) {
+                    reject(new Error(response.error.message));
+                  } else {
+                    resolve(response.result);
+                  }
+                }
+              } catch (e2) {
+                // 忽略解析错误，继续等待
+              }
+            }
+            // 否则是日志输出，继续等待
           }
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      this.process.stdout.on('data', onData);
+        };      this.process.stdout.on('data', onData);
       this.process.stdin.write(JSON.stringify(request) + '\n');
     });
   }
