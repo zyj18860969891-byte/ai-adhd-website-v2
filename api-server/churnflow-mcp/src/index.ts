@@ -131,22 +131,56 @@ async function loadConfig(): Promise<ChurnConfig> {
     return config!;
   } catch (error) {
     log(`Failed to load config file: ${error}`, 'error');
-    
-    // Fallback config for development - use local data directory
+
+    // Fallback config for deployment - use churnflow-mcp subdirectory
     log('Using fallback configuration', 'warn');
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if we're in the churnflow-mcp directory or root
+    const cwd = process.cwd();
+    const isChurnflowDir = cwd.includes('churnflow-mcp');
+    const basePath = isChurnflowDir ? cwd : path.join(cwd, 'churnflow-mcp');
+    
+    // Verify data files exist
+    const crossrefPath = path.join(basePath, 'data/crossref/crossref.json');
+    const collectionsPath = path.join(basePath, 'data/collections');
+    const trackingPath = path.join(basePath, 'data/tracking');
+    
+    log(`Fallback basePath: ${basePath}`, 'warn');
+    log(`Checking crossref path: ${crossrefPath}`, 'warn');
+    
+    if (fs.existsSync(crossrefPath)) {
+      log(`✓ Crossref data file found at: ${crossrefPath}`, 'info');
+    } else {
+      log(`✗ Crossref data file NOT found at: ${crossrefPath}`, 'error');
+      // Try alternative paths
+      const altCrossref = path.join(cwd, 'data/crossref/crossref.json');
+      if (fs.existsSync(altCrossref)) {
+        log(`✓ Found at alternative path: ${altCrossref}`, 'info');
+        config = {
+          collectionsPath: path.join(cwd, 'data/collections'),
+          trackingPath: path.join(cwd, 'data/tracking'),
+          crossrefPath: altCrossref,
+          aiProvider: 'openai',
+          aiApiKey: process.env.OPENAI_API_KEY || '',
+          confidenceThreshold: 0.7
+        };
+        return config;
+      }
+    }
+    
     config = {
-      collectionsPath: './data/collections',
-      trackingPath: './data/tracking', 
-      crossrefPath: './data/crossref/crossref.json',
+      collectionsPath: collectionsPath,
+      trackingPath: trackingPath,
+      crossrefPath: crossrefPath,
       aiProvider: 'openai',
       aiApiKey: process.env.OPENAI_API_KEY || '',
       confidenceThreshold: 0.7
     };
     return config;
   }
-}
-
-/**
+}/**
  * Initialize the capture engine
  */
 async function initializeCaptureEngine(): Promise<void> {
