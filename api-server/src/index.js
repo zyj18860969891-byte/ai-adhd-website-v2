@@ -1,4 +1,4 @@
-import express from 'express';
+ï»¿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { spawn } from 'child_process';
@@ -7,13 +7,13 @@ dotenv.config();
 
 import StdioMCPClient from './stdio-mcp-client.js';
 
-// Æô¶¯Ê±²»ÒªµÈ´ıMCP·şÎñÁ¬½Ó£¬ÈÃËüÃÇÔÚºóÌ¨ÔËĞĞ
+// å¯åŠ¨æ—¶ä¸è¦ç­‰å¾…MCPæœåŠ¡è¿æ¥ï¼Œè®©å®ƒä»¬åœ¨åå°è¿è¡Œ
 console.log('Starting API Server on port', process.env.PORT || 3003);
 
 const app = express();
 const API_PORT = process.env.PORT || 3003;
 
-// ÖĞ¼ä¼ş
+// ä¸­é—´ä»¶
 app.use(cors());
 app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -33,9 +33,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Â·ÓÉ
+// API è·¯ç”±
 
-// ½¡¿µ¼ì²é¶Ëµã - ¼ì²éËùÓĞMCP·şÎñ×´Ì¬
+// å¥åº·æ£€æŸ¥ç«¯ç‚¹ - æ£€æŸ¥æ‰€æœ‰MCPæœåŠ¡çŠ¶æ€
 app.get('/api/health', async (req, res) => {
   try {
     const healthStatus = {
@@ -43,10 +43,10 @@ app.get('/api/health', async (req, res) => {
       services: {}
     };
 
-    // ¼ì²éChurnFlow MCP·şÎñ - Ê¹ÓÃ¶Ë¿Ú¼ì²é
+    // æ£€æŸ¥ChurnFlow MCPæœåŠ¡ - ä½¿ç”¨ç«¯å£æ£€æŸ¥
     try {
-      const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3001');
-      const isChurnFlowHealthy = await checkPortHealth(churnFlowPort);
+      const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3008');
+      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL;
       healthStatus.services.churnFlow = {
         status: isChurnFlowHealthy ? 'healthy' : 'unhealthy',
         details: isChurnFlowHealthy ? 'Port accessible' : 'Port not accessible'
@@ -55,10 +55,10 @@ app.get('/api/health', async (req, res) => {
       healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
     }
 
-    // ¼ì²éShrimp MCP·şÎñ
+    // æ£€æŸ¥Shrimp MCPæœåŠ¡
     try {
-      const shrimpPort = parseInt(process.env.SHRIMP_PORT || '3002');
-      const isShrimpHealthy = await checkPortHealth(shrimpPort);
+      const shrimpPort = parseInt(process.env.SHRIMP_PORT || '3009');
+      const shrimpUrl = process.env.MCP_SHRIMP_URL;
       healthStatus.services.shrimp = {
         status: isShrimpHealthy ? 'healthy' : 'unhealthy',
         details: isShrimpHealthy ? 'Port accessible' : 'Port not accessible'
@@ -67,10 +67,9 @@ app.get('/api/health', async (req, res) => {
       healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
     }
 
-    // ¼ì²éWeb UI·şÎñ
+    // æ£€æŸ¥Web UIæœåŠ¡
     try {
-      const webPort = parseInt(process.env.WEB_PORT || '3000');
-      const isWebHealthy = await checkPortHealth(webPort);
+      const webUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app';
       healthStatus.services.webUI = {
         status: isWebHealthy ? 'healthy' : 'unhealthy',
         details: isWebHealthy ? 'Port accessible' : 'Port not accessible'
@@ -87,24 +86,31 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ¶Ë¿Ú½¡¿µ¼ì²é¸¨Öúº¯Êı
+// ç«¯å£å¥åº·æ£€æŸ¥è¾…åŠ©å‡½æ•°
 async function checkPortHealth(port, host = 'localhost') {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    const cleanup = () => { try { socket.destroy(); } catch (e) {} };
-    socket.setTimeout(2000, () => { cleanup(); resolve(false); });
-    socket.on('connect', () => { cleanup(); resolve(true); });
-    socket.on('error', () => { cleanup(); resolve(false); });
-    socket.on('timeout', () => { cleanup(); resolve(false); });
-    try { socket.connect(port, host); } catch (error) { cleanup(); resolve(false); }
-  });
-}
+  }
 
-// MCP½¡¿µ¼ì²é¶Ëµã
+  // URLå¥åº·æ£€æŸ¥è¾…åŠ©å‡½æ•°ï¼ˆé€‚ç”¨äºå¤šæœåŠ¡éƒ¨ç½²ï¼‰
+  async function checkUrlHealth(url, timeout = 5000) {
+    return new Promise((resolve) => {
+      const protocol = url.startsWith('https') ? require('https') : require('http');
+      const req = protocol.request(url, { method: 'GET', timeout: timeout }, (res) => {
+        const healthy = res.statusCode >= 200 && res.statusCode < 400;
+        resolve(healthy);
+        res.on('data', () => {});
+        res.on('end', () => {});
+      });
+      req.on('error', () => resolve(false));
+      req.on('timeout', () => { req.destroy(); resolve(false); });
+      req.end();
+    });
+  }
+
+// MCPå¥åº·æ£€æŸ¥ç«¯ç‚¹
 app.get('/api/mcp-health', async (req, res) => {
   try {
-    const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3001');
-    const shrimpPort = parseInt(process.env.SHRIMP_PORT || '3002');
+      const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3008');
+      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL;
     const [churnFlowHealthy, shrimpHealthy] = await Promise.all([
       checkPortHealth(churnFlowPort),
       checkPortHealth(shrimpPort)
@@ -119,7 +125,7 @@ app.get('/api/mcp-health', async (req, res) => {
   }
 });
 
-// ·şÎñ×´Ì¬¶Ëµã
+// æœåŠ¡çŠ¶æ€ç«¯ç‚¹
 app.get('/api/services', async (req, res) => {
   try {
     const services = [
@@ -137,7 +143,7 @@ app.get('/api/services', async (req, res) => {
   }
 });
 
-// Ô­ÓĞMCPÂ·ÓÉ±£³Ö²»±ä
+// åŸæœ‰MCPè·¯ç”±ä¿æŒä¸å˜
 app.get('/api/mcp/churnflow', async (req, res) => {
   try {
     const port = parseInt(process.env.CHURNFLOW_PORT || '3001');
@@ -158,12 +164,12 @@ app.get('/api/mcp/shrimp', async (req, res) => {
   }
 });
 
-// »ñÈ¡ËùÓĞÈÎÎñ
+// è·å–æ‰€æœ‰ä»»åŠ¡
 app.get('/api/tasks', (req, res) => {
   res.json(tasks);
 });
 
-// »ñÈ¡µ¥¸öÈÎÎñ
+// è·å–å•ä¸ªä»»åŠ¡
 app.get('/api/tasks/:id', (req, res) => {
   const task = tasks.find(t => t.id === req.params.id);
   if (!task) {
@@ -172,7 +178,7 @@ app.get('/api/tasks/:id', (req, res) => {
   res.json(task);
 });
 
-// ´´½¨ÈÎÎñ
+// åˆ›å»ºä»»åŠ¡
 app.post('/api/tasks', (req, res) => {
   const { title, description, priority, dueDate } = req.body;
 
@@ -194,7 +200,7 @@ app.post('/api/tasks', (req, res) => {
   res.status(201).json(newTask);
 });
 
-// ¸üĞÂÈÎÎñ
+// æ›´æ–°ä»»åŠ¡
 app.put('/api/tasks/:id', (req, res) => {
   const taskIndex = tasks.findIndex(t => t.id === req.params.id);
   if (taskIndex === -1) {
@@ -214,7 +220,7 @@ app.put('/api/tasks/:id', (req, res) => {
   res.json(task);
 });
 
-// É¾³ıÈÎÎñ
+// åˆ é™¤ä»»åŠ¡
 app.delete('/api/tasks/:id', (req, res) => {
   const taskIndex = tasks.findIndex(t => t.id === req.params.id);
   if (taskIndex === -1) {
@@ -225,7 +231,7 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.status(204).send();
 });
 
-// ChurnFlow MCP ·şÎñ¶Ëµã
+// ChurnFlow MCP æœåŠ¡ç«¯ç‚¹
 app.post('/api/mcp/churnflow', async (req, res) => {
   try {
     const { action, data } = req.body;
@@ -237,7 +243,7 @@ app.post('/api/mcp/churnflow', async (req, res) => {
   }
 });
 
-// Shrimp MCP ·şÎñ¶Ëµã
+// Shrimp MCP æœåŠ¡ç«¯ç‚¹
 app.post('/api/mcp/shrimp', async (req, res) => {
   try {
     const { action, data } = req.body;
@@ -249,7 +255,7 @@ app.post('/api/mcp/shrimp', async (req, res) => {
   }
 });
 
-// Reminder MCP ·şÎñ¶Ëµã
+// Reminder MCP æœåŠ¡ç«¯ç‚¹
 app.post('/api/mcp/reminder', async (req, res) => {
   try {
     const { action, data } = req.body;
@@ -261,7 +267,7 @@ app.post('/api/mcp/reminder', async (req, res) => {
   }
 });
 
-// ¸ùÂ·¾¶Â·ÓÉ - ·µ»Ø»¶Ó­ĞÅÏ¢
+// æ ¹è·¯å¾„è·¯ç”± - è¿”å›æ¬¢è¿ä¿¡æ¯
 app.get('/', (req, res) => {
   res.json({
     message: 'AI ADHD Website API Server',
@@ -277,15 +283,15 @@ app.get('/', (req, res) => {
   });
 });
 
-// Æô¶¯·şÎñÆ÷ - Ê¹ÓÃ3003¶Ë¿ÚÓëRailwayÅäÖÃÒ»ÖÂ
+// å¯åŠ¨æœåŠ¡å™¨ - ä½¿ç”¨3003ç«¯å£ä¸Railwayé…ç½®ä¸€è‡´
 const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
-  console.log(`API·şÎñÆ÷ÔËĞĞÔÚ¶Ë¿Ú ${PORT}`);
+  console.log(`APIæœåŠ¡å™¨è¿è¡Œåœ¨ç«¯å£ ${PORT}`);
 });
 
-// ¸¨Öúº¯Êı - Ä£ÄâMCP·şÎñ²Ù×÷
+// è¾…åŠ©å‡½æ•° - æ¨¡æ‹ŸMCPæœåŠ¡æ“ä½œ
 async function handleChurnFlowAction(action, data) {
-  // ÕâÀïÓ¦¸Ãµ÷ÓÃÊµ¼ÊµÄMCP¿Í»§¶Ë
+  // è¿™é‡Œåº”è¯¥è°ƒç”¨å®é™…çš„MCPå®¢æˆ·ç«¯
   return { action, data, service: 'churnflow', status: 'processed' };
 }
 
@@ -297,12 +303,12 @@ async function handleReminderAction(action, data) {
   return { action, data, service: 'reminder', status: 'processed' };
 }
 
-// ÈÎÎñÊı¾İ´æ´¢
+// ä»»åŠ¡æ•°æ®å­˜å‚¨
 let tasks = [
   {
     id: '1',
-    title: 'Ê¾ÀıÈÎÎñ',
-    description: 'ÕâÊÇÒ»¸öÊ¾ÀıÈÎÎñ',
+    title: 'ç¤ºä¾‹ä»»åŠ¡',
+    description: 'è¿™æ˜¯ä¸€ä¸ªç¤ºä¾‹ä»»åŠ¡',
     priority: 'high',
     dueDate: null,
     completed: false,
