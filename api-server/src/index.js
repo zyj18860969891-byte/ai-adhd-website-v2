@@ -35,6 +35,10 @@ app.get('/', (req, res) => {
 
 // API 路由
 
+// 全局 MCP 客户端实例（在文件底部初始化）
+let churnFlowClient = null;
+let shrimpClient = null;
+
 // 健康检查端点 - 检查所有服务状态
 app.get('/api/health', async (req, res) => {
   try {
@@ -43,16 +47,14 @@ app.get('/api/health', async (req, res) => {
       services: {}
     };
 
-    // 检查ChurnFlow MCP服务 - 使用环境变量中的URL或端口
+    // 检查ChurnFlow MCP服务 - 检查客户端连接状态
     try {
-      // Railway 内部服务地址格式：churnflow-mcp-production.up.railway.app
-      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
-      const churnFlowHealthy = await checkUrlHealth(churnFlowUrl);
+      const churnFlowHealthy = churnFlowClient && churnFlowClient.state.isConnected;
       healthStatus.services.churnFlow = {
         status: churnFlowHealthy ? 'healthy' : 'unhealthy',
-        details: churnFlowHealthy ? 'Service accessible' : 'Service not accessible',
-        type: 'http',
-        url: churnFlowUrl
+        details: churnFlowHealthy ? 'MCP client connected' : 'MCP client disconnected',
+        type: 'stdio',
+        connectionState: churnFlowClient ? churnFlowClient.state : 'not initialized'
       };
     } catch (error) {
       healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
@@ -60,13 +62,12 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Shrimp MCP服务
     try {
-      const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
-      const shrimpHealthy = await checkUrlHealth(shrimpUrl);
+      const shrimpHealthy = shrimpClient && shrimpClient.state.isConnected;
       healthStatus.services.shrimp = {
         status: shrimpHealthy ? 'healthy' : 'unhealthy',
-        details: shrimpHealthy ? 'Service accessible' : 'Service not accessible',
-        type: 'http',
-        url: shrimpUrl
+        details: shrimpHealthy ? 'MCP client connected' : 'MCP client disconnected',
+        type: 'stdio',
+        connectionState: shrimpClient ? shrimpClient.state : 'not initialized'
       };
     } catch (error) {
       healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
@@ -164,18 +165,18 @@ async function checkUrlHealth(url, timeout = 5000) {
 // MCP健康检查端点
 app.get('/api/mcp-health', async (req, res) => {
   try {
-    const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
-    const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
-    
-    const [churnFlowHealthy, shrimpHealthy] = await Promise.all([
-      checkUrlHealth(churnFlowUrl),
-      checkUrlHealth(shrimpUrl)
-    ]);
-    
     res.json({
       timestamp: new Date().toISOString(),
-      churnFlow: { status: churnFlowHealthy ? 'healthy' : 'unhealthy', type: 'http', url: churnFlowUrl },     
-      shrimp: { status: shrimpHealthy ? 'healthy' : 'unhealthy', type: 'http', url: shrimpUrl }
+      churnFlow: { 
+        status: churnFlowClient?.state.isConnected ? 'healthy' : 'unhealthy', 
+        type: 'stdio',
+        state: churnFlowClient?.state || 'not initialized'
+      },     
+      shrimp: { 
+        status: shrimpClient?.state.isConnected ? 'healthy' : 'unhealthy', 
+        type: 'stdio',
+        state: shrimpClient?.state || 'not initialized'
+      }
     });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
@@ -186,15 +187,26 @@ app.get('/api/mcp-health', async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const services = [
-      { name: 'ChurnFlow MCP', type: 'http', url: process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app' },
-      { name: 'Shrimp Task Manager', type: 'http', url: process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app' },
-      { name: 'Web UI', type: 'http', url: process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app' }
+      { 
+        name: 'ChurnFlow MCP', 
+        type: 'stdio', 
+        status: churnFlowClient?.state.isConnected ? 'running' : 'stopped',
+        state: churnFlowClient?.state || 'not initialized'
+      },
+      { 
+        name: 'Shrimp Task Manager', 
+        type: 'stdio', 
+        status: shrimpClient?.state.isConnected ? 'running' : 'stopped',
+        state: shrimpClient?.state || 'not initialized'
+      },
+      { 
+        name: 'Web UI', 
+        type: 'http', 
+        url: process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app',
+        status: 'external'  // 外部服务，无法直接检测
+      }
     ];
-    const statusChecks = await Promise.all(services.map(async (service) => {
-      const healthy = await checkUrlHealth(service.url);
-      return { ...service, status: healthy ? 'running' : 'stopped' };
-    }));
-    res.json({ timestamp: new Date().toISOString(), services: statusChecks });
+    res.json({ timestamp: new Date().toISOString(), services });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
   }
@@ -203,9 +215,13 @@ app.get('/api/services', async (req, res) => {
 // 原有MCP路由保持不变
 app.get('/api/mcp/churnflow', async (req, res) => {
   try {
-    const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
-    const healthy = await checkUrlHealth(churnFlowUrl);
-    res.json({ service: 'ChurnFlow MCP', status: healthy ? 'running' : 'stopped', type: 'http', url: churnFlowUrl, timestamp: new Date().toISOString() });
+    res.json({ 
+      service: 'ChurnFlow MCP', 
+      status: churnFlowClient?.state.isConnected ? 'running' : 'stopped', 
+      type: 'stdio',
+      state: churnFlowClient?.state || 'not initialized',
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -213,9 +229,13 @@ app.get('/api/mcp/churnflow', async (req, res) => {
 
 app.get('/api/mcp/shrimp', async (req, res) => {
   try {
-    const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
-    const healthy = await checkUrlHealth(shrimpUrl);
-    res.json({ service: 'Shrimp Task Manager', status: healthy ? 'running' : 'stopped', type: 'http', url: shrimpUrl, timestamp: new Date().toISOString() });
+    res.json({ 
+      service: 'Shrimp Task Manager', 
+      status: shrimpClient?.state.isConnected ? 'running' : 'stopped', 
+      type: 'stdio',
+      state: shrimpClient?.state || 'not initialized',
+      timestamp: new Date().toISOString() 
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -370,3 +390,43 @@ let tasks = [
     createdAt: new Date().toISOString()
   }
 ];
+
+// 初始化 MCP 客户端（在服务器启动后）
+async function initializeMCPClients() {
+  try {
+    // 动态导入（避免 ESM 问题）
+    const { default: StdioMCPClient } = await import('./stdio-mcp-client.js');
+    
+    // ChurnFlow MCP 客户端
+    churnFlowClient = new StdioMCPClient('../churnflow-mcp/dist/index.js');
+    churnFlowClient.on('error', (error) => {
+      console.error('ChurnFlow MCP Client error:', error);
+    });
+    churnFlowClient.on('disconnected', () => {
+      console.log('ChurnFlow MCP Client disconnected');
+    });
+    
+    // Shrimp MCP 客户端
+    shrimpClient = new StdioMCPClient('../mcp-shrimp-task-manager/dist/index.js');
+    shrimpClient.on('error', (error) => {
+      console.error('Shrimp MCP Client error:', error);
+    });
+    shrimpClient.on('disconnected', () => {
+      console.log('Shrimp MCP Client disconnected');
+    });
+    
+    // 尝试连接
+    console.log('Initializing MCP clients...');
+    await churnFlowClient.connect();
+    await shrimpClient.connect();
+    
+    console.log('✅ MCP clients initialized successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize MCP clients:', error.message);
+  }
+}
+
+// 服务器启动后初始化客户端
+setTimeout(() => {
+  initializeMCPClients();
+}, 1000);
