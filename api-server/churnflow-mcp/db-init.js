@@ -14,7 +14,20 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.CHURN_DB_PATH || path.join(__dirname, 'churnflow.db');
+
+// Try multiple possible locations
+let dbPath = process.env.CHURN_DB_PATH;
+if (!dbPath) {
+  const cwd = process.cwd();
+  
+  // If running from /app/churnflow-mcp, use that
+  if (cwd.includes('churnflow-mcp')) {
+    dbPath = path.join(cwd, 'churnflow.db');
+  } else {
+    // Running from /app, create in churnflow-mcp subdirectory
+    dbPath = path.join(cwd, 'churnflow-mcp', 'churnflow.db');
+  }
+}
 
 console.log('🗄️  ChurnFlow 数据库初始化');
 console.log('=====================================');

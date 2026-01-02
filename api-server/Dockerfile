@@ -15,8 +15,8 @@ RUN cd /app && npm install --ignore-scripts
 
 # Build ChurnFlow MCP
 RUN cd /app/churnflow-mcp && npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source && npm run build || true
-# Initialize ChurnFlow database
-RUN cd /app/churnflow-mcp && npm run db:setup || true
+# Initialize ChurnFlow database (ensure it's in the right location)
+RUN cd /app/churnflow-mcp && CHURN_DB_PATH=/app/churnflow.db npm run db:setup || true
 
 # Build Shrimp MCP
 RUN cd /app/mcp-shrimp-task-manager && npm install --ignore-scripts && npm run build || true

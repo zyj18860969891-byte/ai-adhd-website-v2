@@ -39,19 +39,45 @@ export class DatabaseManager {
   private isInitialized = false;
 
   constructor(private dbConfig: DatabaseConfig = {}) {
-    const dbPath = dbConfig.dbPath || path.join(process.cwd(), 'churnflow.db');
+    // Try multiple possible database locations
+    let dbPath = dbConfig.dbPath;
     
+    if (!dbPath) {
+      const cwd = process.cwd();
+      
+      // Priority 1: /app/churnflow.db (if running from /app)
+      const path1 = path.join(cwd, 'churnflow.db');
+      
+      // Priority 2: /app/churnflow-mcp/churnflow.db (if running from /app/churnflow-mcp)
+      const path2 = path.join(cwd, 'churnflow-mcp', 'churnflow.db');
+      
+      // Priority 3: Use CHURN_DB_PATH env var
+      const path3 = process.env.CHURN_DB_PATH;
+      
+      // Check which path exists
+      if (fs.existsSync(path1)) {
+        dbPath = path1;
+      } else if (fs.existsSync(path2)) {
+        dbPath = path2;
+      } else if (path3 && fs.existsSync(path3)) {
+        dbPath = path3;
+      } else {
+        // Default to /app/churnflow.db (will be created if doesn't exist)
+        dbPath = path1;
+      }
+    }
+
     // Ensure directory exists
     const dbDir = path.dirname(dbPath);
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
 
+    console.log(`[DatabaseManager] Using database at: ${dbPath}`);
+    
     this.sqlite = new Database(dbPath);
     this.db = drizzle(this.sqlite);
-  }
-
-  async initialize(): Promise<void> {
+  }  async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
     try {
