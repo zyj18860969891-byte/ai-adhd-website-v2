@@ -134,8 +134,12 @@ async function loadConfig(): Promise<ChurnConfig> {
 
     // Fallback config for deployment - use churnflow-mcp subdirectory
     log('Using fallback configuration', 'warn');
-    const fs = require('fs');
-    const path = require('path');
+    
+    // Use ES module imports for compatibility
+    const fsModule = await import('fs/promises');
+    const pathModule = await import('path');
+    const fs = fsModule.default || fsModule;
+    const path = pathModule.default || pathModule;
     
     // Check if we're in the churnflow-mcp directory or root
     const cwd = process.cwd();
@@ -150,13 +154,15 @@ async function loadConfig(): Promise<ChurnConfig> {
     log(`Fallback basePath: ${basePath}`, 'warn');
     log(`Checking crossref path: ${crossrefPath}`, 'warn');
     
-    if (fs.existsSync(crossrefPath)) {
+    try {
+      await fs.access(crossrefPath);
       log(`✓ Crossref data file found at: ${crossrefPath}`, 'info');
-    } else {
+    } catch {
       log(`✗ Crossref data file NOT found at: ${crossrefPath}`, 'error');
       // Try alternative paths
       const altCrossref = path.join(cwd, 'data/crossref/crossref.json');
-      if (fs.existsSync(altCrossref)) {
+      try {
+        await fs.access(altCrossref);
         log(`✓ Found at alternative path: ${altCrossref}`, 'info');
         config = {
           collectionsPath: path.join(cwd, 'data/collections'),
@@ -167,6 +173,8 @@ async function loadConfig(): Promise<ChurnConfig> {
           confidenceThreshold: 0.7
         };
         return config;
+      } catch {
+        // Both paths failed
       }
     }
     
