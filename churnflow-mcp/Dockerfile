@@ -1,35 +1,35 @@
-# Ê¹ÓÃ node:lts (²»ÊÇ slim »ò alpine) - ×î´ó¼æÈİĞÔ
+ï»¿# ä½¿ç”¨ node:lts - æœ€å¤§å…¼å®¹æ€§
 FROM node:lts
 
-# °²×°¹¹½¨¹¤¾ß
+# å®‰è£…æ„å»ºå·¥å…·
 RUN apt-get update && apt-get install -y \
     python3 make g++ build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# ¸´ÖÆ package.json
+# å¤åˆ¶ package.json
 COPY package*.json ./
 
-# °²×°ÒÀÀµ
+# å®‰è£…ä¾èµ–
 RUN npm install
 
-# Ç¿ÖÆÖØĞÂ±àÒë better-sqlite3
+# å¼ºåˆ¶é‡æ–°ç¼–è¯‘ better-sqlite3
 RUN npm rebuild better-sqlite3 --build-from-source
 
-# ÑéÖ¤
-RUN node -e "const db = require('better-sqlite3'); console.log('? works!');"
+# éªŒè¯
+RUN node -e "const db = require('better-sqlite3'); console.log('âœ… works!');"
 
-# ¸´ÖÆÔ´Âë
+# å¤åˆ¶æºç 
 COPY . .
 
-# ±àÒë TypeScript
-RUN npx tsc
+# ä¿®å¤æƒé™å¹¶ç¼–è¯‘ TypeScript
+RUN chmod -R 755 node_modules/.bin/ && ./node_modules/.bin/tsc
 
-# ÒÆ³ı¹¹½¨¹¤¾ß
+# ç§»é™¤æ„å»ºå·¥å…·
 RUN apt-get purge -y python3 make g++ build-essential && apt-get autoremove -y
 
-# ´´½¨Êı¾İÄ¿Â¼
+# åˆ›å»ºæ•°æ®ç›®å½•
 RUN mkdir -p /app/data/collections /app/data/tracking /app/data/crossref
 
 EXPOSE 3008
