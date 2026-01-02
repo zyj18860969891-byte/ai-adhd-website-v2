@@ -54,10 +54,10 @@ app.get('/api/health', async (req, res) => {
         status: churnFlowHealthy ? 'healthy' : 'unhealthy',
         details: churnFlowHealthy ? 'MCP client connected' : 'MCP client disconnected',
         type: 'stdio',
-        connectionState: churnFlowClient ? churnFlowClient.state : 'not initialized'
+        connectionState: churnFlowClient ? churnFlowClient.state : { error: 'Client not initialized' }
       };
     } catch (error) {
-      healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
+      healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message, details: 'Exception during check' };
     }
 
     // 检查Shrimp MCP服务
@@ -67,24 +67,33 @@ app.get('/api/health', async (req, res) => {
         status: shrimpHealthy ? 'healthy' : 'unhealthy',
         details: shrimpHealthy ? 'MCP client connected' : 'MCP client disconnected',
         type: 'stdio',
-        connectionState: shrimpClient ? shrimpClient.state : 'not initialized'
+        connectionState: shrimpClient ? shrimpClient.state : { error: 'Client not initialized' }
       };
     } catch (error) {
-      healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
+      healthStatus.services.shrimp = { status: 'unhealthy', error: error.message, details: 'Exception during check' };
     }
 
     // 检查Web UI服务
     try {
-      const webUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app';
-      const webHealthy = await checkUrlHealth(webUrl);
-      healthStatus.services.webUI = {
-        status: webHealthy ? 'healthy' : 'unhealthy',
-        details: webHealthy ? 'URL accessible' : 'URL not accessible',
-        type: 'http',
-        url: webUrl
-      };
+      const webUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL;
+      if (!webUrl) {
+        healthStatus.services.webUI = {
+          status: 'unknown',
+          details: 'Web UI URL not configured',
+          type: 'http',
+          note: 'Set NEXT_PUBLIC_WEB_URL environment variable'
+        };
+      } else {
+        const webHealthy = await checkUrlHealth(webUrl);
+        healthStatus.services.webUI = {
+          status: webHealthy ? 'healthy' : 'unhealthy',
+          details: webHealthy ? 'URL accessible' : 'URL not accessible',
+          type: 'http',
+          url: webUrl
+        };
+      }
     } catch (error) {
-      healthStatus.services.webUI = { status: 'unhealthy', error: error.message };
+      healthStatus.services.webUI = { status: 'unhealthy', error: error.message, details: 'Check failed' };
     }
 
     const allHealthy = Object.values(healthStatus.services).every(s => s.status === 'healthy');   
@@ -400,27 +409,53 @@ async function initializeMCPClients() {
     // ChurnFlow MCP 客户端
     churnFlowClient = new StdioMCPClient('../churnflow-mcp/dist/index.js');
     churnFlowClient.on('error', (error) => {
-      console.error('ChurnFlow MCP Client error:', error);
+      console.error('❌ ChurnFlow MCP Client error:', error.message);
+      churnFlowClient.state.isConnected = false;
     });
     churnFlowClient.on('disconnected', () => {
-      console.log('ChurnFlow MCP Client disconnected');
+      console.log('⚠️ ChurnFlow MCP Client disconnected');
+      churnFlowClient.state.isConnected = false;
+    });
+    churnFlowClient.on('connected', () => {
+      console.log('✅ ChurnFlow MCP Client connected');
+      churnFlowClient.state.isConnected = true;
     });
     
     // Shrimp MCP 客户端
     shrimpClient = new StdioMCPClient('../mcp-shrimp-task-manager/dist/index.js');
     shrimpClient.on('error', (error) => {
-      console.error('Shrimp MCP Client error:', error);
+      console.error('❌ Shrimp MCP Client error:', error.message);
+      shrimpClient.state.isConnected = false;
     });
     shrimpClient.on('disconnected', () => {
-      console.log('Shrimp MCP Client disconnected');
+      console.log('⚠️ Shrimp MCP Client disconnected');
+      shrimpClient.state.isConnected = false;
+    });
+    shrimpClient.on('connected', () => {
+      console.log('✅ Shrimp MCP Client connected');
+      shrimpClient.state.isConnected = true;
     });
     
-    // 尝试连接
-    console.log('Initializing MCP clients...');
-    await churnFlowClient.connect();
-    await shrimpClient.connect();
+    // 尝试连接（带重试）
+    console.log('🔄 Initializing MCP clients...');
     
-    console.log('✅ MCP clients initialized successfully');
+    // ChurnFlow
+    try {
+      await churnFlowClient.connect();
+      console.log('✅ ChurnFlow connected');
+    } catch (error) {
+      console.error('❌ ChurnFlow connection failed:', error.message);
+    }
+    
+    // Shrimp
+    try {
+      await shrimpClient.connect();
+      console.log('✅ Shrimp connected');
+    } catch (error) {
+      console.error('❌ Shrimp connection failed:', error.message);
+    }
+    
+    console.log('🎯 MCP client initialization complete');
   } catch (error) {
     console.error('❌ Failed to initialize MCP clients:', error.message);
   }
@@ -429,4 +464,4 @@ async function initializeMCPClients() {
 // 服务器启动后初始化客户端
 setTimeout(() => {
   initializeMCPClients();
-}, 1000);
+}, 2000);
