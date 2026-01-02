@@ -1,29 +1,32 @@
-# API Server Dockerfile
+﻿# API Server Dockerfile
 FROM node:lts-alpine
 
-# Install necessary build tools and bash
-RUN apk add --no-cache bash
+# Install necessary build tools
+RUN apk add --no-cache python3 make g++ gcc libc-dev bash
 
 # Create app directory
 WORKDIR /app
 
-# Copy package files from api-server directory
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --ignore-scripts
-
-# Bundle app source code
+# Copy all source code (including MCP services)
 COPY . .
 
-# Fix permissions for node_modules binaries
-RUN chmod +x node_modules/.bin/*
+# Install API server dependencies
+RUN cd /app && npm install --ignore-scripts
 
-# Build the code (if TypeScript is available)
-RUN npm run build || true
+# Build ChurnFlow MCP
+RUN cd /app/churnflow-mcp && npm install --ignore-scripts && npm rebuild better-sqlite3 --build-from-source && npm run build || true
 
-# Expose port for API server
+# Build Shrimp MCP
+RUN cd /app/mcp-shrimp-task-manager && npm install --ignore-scripts && npm run build || true
+
+# Build API server
+RUN cd /app && npm run build || true
+
+# Fix permissions
+RUN chmod -R 755 /app/node_modules/.bin/ /app/churnflow-mcp/node_modules/.bin/ /app/mcp-shrimp-task-manager/node_modules/.bin/
+
+# Expose port
 EXPOSE 3003
 
-# Command to run the API server
+# Start API server
 CMD [ "npm", "start" ]
