@@ -43,13 +43,16 @@ app.get('/api/health', async (req, res) => {
       services: {}
     };
 
-    // 检查ChurnFlow MCP服务 - 检查进程是否存在
+    // 检查ChurnFlow MCP服务 - 使用环境变量中的URL或端口
     try {
-      const churnFlowHealthy = await checkMCPProcessHealth('churnflow');
+      // Railway 内部服务地址格式：churnflow-mcp-production.up.railway.app
+      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
+      const churnFlowHealthy = await checkUrlHealth(churnFlowUrl);
       healthStatus.services.churnFlow = {
         status: churnFlowHealthy ? 'healthy' : 'unhealthy',
-        details: churnFlowHealthy ? 'MCP process running' : 'MCP process not found',
-        type: 'stdio'
+        details: churnFlowHealthy ? 'Service accessible' : 'Service not accessible',
+        type: 'http',
+        url: churnFlowUrl
       };
     } catch (error) {
       healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
@@ -57,11 +60,13 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Shrimp MCP服务
     try {
-      const shrimpHealthy = await checkMCPProcessHealth('shrimp');
+      const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
+      const shrimpHealthy = await checkUrlHealth(shrimpUrl);
       healthStatus.services.shrimp = {
         status: shrimpHealthy ? 'healthy' : 'unhealthy',
-        details: shrimpHealthy ? 'MCP process running' : 'MCP process not found',
-        type: 'stdio'
+        details: shrimpHealthy ? 'Service accessible' : 'Service not accessible',
+        type: 'http',
+        url: shrimpUrl
       };
     } catch (error) {
       healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
@@ -69,7 +74,7 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Web UI服务
     try {
-      const webUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app';
+      const webUrl = process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app';
       const webHealthy = await checkUrlHealth(webUrl);
       healthStatus.services.webUI = {
         status: webHealthy ? 'healthy' : 'unhealthy',
@@ -159,14 +164,18 @@ async function checkUrlHealth(url, timeout = 5000) {
 // MCP健康检查端点
 app.get('/api/mcp-health', async (req, res) => {
   try {
+    const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
+    const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
+    
     const [churnFlowHealthy, shrimpHealthy] = await Promise.all([
-      checkMCPProcessHealth('churnflow'),
-      checkMCPProcessHealth('shrimp')
+      checkUrlHealth(churnFlowUrl),
+      checkUrlHealth(shrimpUrl)
     ]);
+    
     res.json({
       timestamp: new Date().toISOString(),
-      churnFlow: { status: churnFlowHealthy ? 'healthy' : 'unhealthy', type: 'stdio' },     
-      shrimp: { status: shrimpHealthy ? 'healthy' : 'unhealthy', type: 'stdio' }
+      churnFlow: { status: churnFlowHealthy ? 'healthy' : 'unhealthy', type: 'http', url: churnFlowUrl },     
+      shrimp: { status: shrimpHealthy ? 'healthy' : 'unhealthy', type: 'http', url: shrimpUrl }
     });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
@@ -177,18 +186,13 @@ app.get('/api/mcp-health', async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const services = [
-      { name: 'ChurnFlow MCP', type: 'stdio', serviceName: 'churnflow' },
-      { name: 'Shrimp Task Manager', type: 'stdio', serviceName: 'shrimp' },
-      { name: 'Web UI', type: 'http', url: process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app' }
+      { name: 'ChurnFlow MCP', type: 'http', url: process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app' },
+      { name: 'Shrimp Task Manager', type: 'http', url: process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app' },
+      { name: 'Web UI', type: 'http', url: process.env.NEXT_PUBLIC_WEB_URL || process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app' }
     ];
     const statusChecks = await Promise.all(services.map(async (service) => {
-      if (service.type === 'stdio') {
-        const healthy = await checkMCPProcessHealth(service.serviceName);
-        return { ...service, status: healthy ? 'running' : 'stopped' };
-      } else {
-        const healthy = await checkUrlHealth(service.url);
-        return { ...service, status: healthy ? 'running' : 'stopped' };
-      }
+      const healthy = await checkUrlHealth(service.url);
+      return { ...service, status: healthy ? 'running' : 'stopped' };
     }));
     res.json({ timestamp: new Date().toISOString(), services: statusChecks });
   } catch (error) {
@@ -199,8 +203,9 @@ app.get('/api/services', async (req, res) => {
 // 原有MCP路由保持不变
 app.get('/api/mcp/churnflow', async (req, res) => {
   try {
-    const healthy = await checkMCPProcessHealth('churnflow');
-    res.json({ service: 'ChurnFlow MCP', status: healthy ? 'running' : 'stopped', type: 'stdio', timestamp: new Date().toISOString() });
+    const churnFlowUrl = process.env.MCP_CHURNFLOW_URL || 'https://churnflow-mcp-production.up.railway.app';
+    const healthy = await checkUrlHealth(churnFlowUrl);
+    res.json({ service: 'ChurnFlow MCP', status: healthy ? 'running' : 'stopped', type: 'http', url: churnFlowUrl, timestamp: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -208,8 +213,9 @@ app.get('/api/mcp/churnflow', async (req, res) => {
 
 app.get('/api/mcp/shrimp', async (req, res) => {
   try {
-    const healthy = await checkMCPProcessHealth('shrimp');
-    res.json({ service: 'Shrimp Task Manager', status: healthy ? 'running' : 'stopped', type: 'stdio', timestamp: new Date().toISOString() });
+    const shrimpUrl = process.env.MCP_SHRIMP_URL || 'https://mcp-shrimp-task-manager-production.up.railway.app';
+    const healthy = await checkUrlHealth(shrimpUrl);
+    res.json({ service: 'Shrimp Task Manager', status: healthy ? 'running' : 'stopped', type: 'http', url: shrimpUrl, timestamp: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
