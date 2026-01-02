@@ -479,15 +479,16 @@ async function main(): Promise<void> {
     
     log('Connecting server to transport...', 'info');
     await server.connect(transport);
-    
+
     log('ChurnFlow MCP Server started successfully', 'info');
     log('Available tools: capture, status, list_trackers', 'info');
     log('Server is ready to accept connections', 'info');
-    
+
     // Keep the process alive
     log('Server running, waiting for client connections...', 'info');
     
-  } catch (error) {
+    // Output ready flag for API server client detection
+    console.log('Ready: ChurnFlow MCP Server initialized');  } catch (error) {
     log(`Failed to start server: ${error}`, 'error');
     log(`Stack: ${error instanceof Error ? error.stack : 'No stack trace'}`, 'error');
     // Don't exit immediately - let the process continue
