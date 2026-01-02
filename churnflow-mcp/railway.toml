@@ -1,6 +1,7 @@
 # ChurnFlow MCP Railway Configuration
 [build]
 builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [env]
 NODE_ENV = "production"
