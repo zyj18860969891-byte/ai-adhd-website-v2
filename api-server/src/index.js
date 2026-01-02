@@ -315,19 +315,56 @@ app.delete('/api/tasks/:id', (req, res) => {
   res.status(204).send();
 });
 
-// ChurnFlow MCP 服务端点
-app.post('/api/mcp/churnflow', async (req, res) => {
-  try {
-    const { action, data } = req.body;
-    const result = await handleChurnFlowAction(action, data);
-    res.json(result);
-  } catch (error) {
-    console.error('ChurnFlow API error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
+  // ChurnFlow MCP 服务端点
+  app.post('/api/mcp/churnflow', async (req, res) => {
+    try {
+      const { action, data } = req.body;
+      const result = await handleChurnFlowAction(action, data);
+      res.json(result);
+    } catch (error) {
+      console.error('ChurnFlow API error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
-// Shrimp MCP 服务端点
+  // 直接 capture 端点（更简单的接口）
+  app.post('/api/mcp/capture', async (req, res) => {
+    try {
+      if (!churnFlowClient || !churnFlowClient.state.isConnected) {
+        return res.status(503).json({ 
+          error: 'ChurnFlow MCP service not available',
+          status: 'disconnected'
+        });
+      }
+
+      const { text, priority = 'medium', context } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: 'text is required' });
+      }
+
+      const result = await churnFlowClient.sendRequest('tools/call', {
+        name: 'capture',
+        arguments: {
+          text,
+          priority,
+          context
+        }
+      });
+
+      res.json({
+        success: true,
+        data: result,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Capture API error:', error);
+      res.status(500).json({ 
+        error: error.message,
+        details: 'Failed to process capture request'
+      });
+    }
+  });// Shrimp MCP 服务端点
 app.post('/api/mcp/shrimp', async (req, res) => {
   try {
     const { action, data } = req.body;
@@ -373,13 +410,31 @@ app.listen(PORT, () => {
   console.log(`API服务器运行在端口 ${PORT}`);
 });
 
-// 辅助函数 - 模拟MCP服务操作
-async function handleChurnFlowAction(action, data) {
-  // 这里应该调用实际的MCP客户端
-  return { action, data, service: 'churnflow', status: 'processed' };
-}
+  // 辅助函数 - 调用实际MCP服务
+  async function handleChurnFlowAction(action, data) {
+    if (!churnFlowClient || !churnFlowClient.state.isConnected) {
+      throw new Error('ChurnFlow MCP client not connected');
+    }
 
-async function handleShrimpAction(action, data) {
+    try {
+      // 调用 MCP 工具
+      const result = await churnFlowClient.sendRequest('tools/call', {
+        name: action,
+        arguments: data
+      });
+      
+      return {
+        success: true,
+        service: 'churnflow',
+        action: action,
+        result: result,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('MCP call failed:', error);
+      throw new Error(`ChurnFlow error: ${error.message}`);
+    }
+  }async function handleShrimpAction(action, data) {
   return { action, data, service: 'shrimp', status: 'processed' };
 }
 
