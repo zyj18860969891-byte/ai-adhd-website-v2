@@ -1,0 +1,23 @@
+﻿# 排除 node_modules - 防止 COPY . . 覆盖编译好的二进制
+node_modules
+
+# 排除编译输出（重新生成）
+dist
+
+# 排除 Git
+.git
+.gitignore
+
+# 排除日志和临时文件
+*.log
+*.tmp
+.DS_Store
+
+# 排除 IDE
+.vscode
+.idea
+
+# 排除测试和文档（可选）
+test
+tests
+*.md
