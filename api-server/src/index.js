@@ -402,66 +402,76 @@ let tasks = [
 
 // 初始化 MCP 客户端（在服务器启动后）
 async function initializeMCPClients() {
+  console.log('🔄 Starting MCP client initialization...');
+  
   try {
     // 动态导入（避免 ESM 问题）
     const { default: StdioMCPClient } = await import('./stdio-mcp-client.js');
     
     // ChurnFlow MCP 客户端
-    churnFlowClient = new StdioMCPClient('../churnflow-mcp/dist/index.js');
+    churnFlowClient = new StdioMCPClient('../churnflow-mcp/dist/index.js', {
+      timeout: { connection: 15000, request: 30000 }
+    });
+    
     churnFlowClient.on('error', (error) => {
       console.error('❌ ChurnFlow MCP Client error:', error.message);
       churnFlowClient.state.isConnected = false;
     });
+    
     churnFlowClient.on('disconnected', () => {
       console.log('⚠️ ChurnFlow MCP Client disconnected');
       churnFlowClient.state.isConnected = false;
     });
+    
     churnFlowClient.on('connected', () => {
       console.log('✅ ChurnFlow MCP Client connected');
       churnFlowClient.state.isConnected = true;
     });
     
     // Shrimp MCP 客户端
-    shrimpClient = new StdioMCPClient('../mcp-shrimp-task-manager/dist/index.js');
+    shrimpClient = new StdioMCPClient('../mcp-shrimp-task-manager/dist/custom-mcp-server.js', {
+      timeout: { connection: 15000, request: 30000 }
+    });
+    
     shrimpClient.on('error', (error) => {
       console.error('❌ Shrimp MCP Client error:', error.message);
       shrimpClient.state.isConnected = false;
     });
+    
     shrimpClient.on('disconnected', () => {
       console.log('⚠️ Shrimp MCP Client disconnected');
       shrimpClient.state.isConnected = false;
     });
+    
     shrimpClient.on('connected', () => {
       console.log('✅ Shrimp MCP Client connected');
       shrimpClient.state.isConnected = true;
     });
     
-    // 尝试连接（带重试）
-    console.log('🔄 Initializing MCP clients...');
-    
-    // ChurnFlow
-    try {
-      await churnFlowClient.connect();
-      console.log('✅ ChurnFlow connected');
-    } catch (error) {
+    // 并行连接
+    console.log('🔄 Connecting to ChurnFlow MCP...');
+    const churnFlowPromise = churnFlowClient.connect().catch((error) => {
       console.error('❌ ChurnFlow connection failed:', error.message);
-    }
+    });
     
-    // Shrimp
-    try {
-      await shrimpClient.connect();
-      console.log('✅ Shrimp connected');
-    } catch (error) {
+    console.log('🔄 Connecting to Shrimp MCP...');
+    const shrimpPromise = shrimpClient.connect().catch((error) => {
       console.error('❌ Shrimp connection failed:', error.message);
-    }
+    });
+    
+    await Promise.all([churnFlowPromise, shrimpPromise]);
     
     console.log('🎯 MCP client initialization complete');
+    console.log(`   - ChurnFlow: ${churnFlowClient.state.isConnected ? '✅ Connected' : '❌ Disconnected'}`);
+    console.log(`   - Shrimp: ${shrimpClient.state.isConnected ? '✅ Connected' : '❌ Disconnected'}`);
+    
   } catch (error) {
     console.error('❌ Failed to initialize MCP clients:', error.message);
+    console.error(error.stack);
   }
 }
 
 // 服务器启动后初始化客户端
 setTimeout(() => {
   initializeMCPClients();
-}, 2000);
+}, 3000);
