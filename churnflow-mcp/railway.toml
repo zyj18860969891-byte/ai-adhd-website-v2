@@ -1,6 +1,6 @@
-# ChurnFlow MCP Railway Configuration
+ï»¿# ChurnFlow MCP Railway Configuration
 [build]
-builder = "nixpacks"  # Ê¹ÓÃ Railway µÄ±ê×¼¹¹½¨Æ÷
+builder = "nixpacks"
 buildCommand = "npm install && npm rebuild better-sqlite3 --build-from-source && npx tsc"
 startCommand = "npm start"
 
