@@ -16,18 +16,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # 完整的依赖安装和重建流程
-# 1. 安装所有依赖（包括 devDependencies 用于构建）
-# 2. 强制重新编译 better-sqlite3
-# 3. 验证编译结果
 RUN npm install && \
     npm rebuild better-sqlite3 --build-from-source && \
-    ls -la node_modules/better-sqlite3/build/Release/ || echo "Build verification failed"
+    ls -la node_modules/better-sqlite3/build/Release/
 
 # Bundle app source code
 COPY . .
 
-# Build the TypeScript code
-RUN npm run build
+# Fix permissions and build
+RUN chmod +x node_modules/.bin/* && \
+    npx tsc
 
 # Verify the build
 RUN ls -la dist/ || echo "Dist directory not found"
