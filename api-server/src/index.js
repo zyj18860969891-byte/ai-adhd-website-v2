@@ -35,7 +35,7 @@ app.get('/', (req, res) => {
 
 // API 路由
 
-// 健康检查端点 - 检查所有MCP服务状态
+// 健康检查端点 - 检查所有服务状态
 app.get('/api/health', async (req, res) => {
   try {
     const healthStatus = {
@@ -43,14 +43,13 @@ app.get('/api/health', async (req, res) => {
       services: {}
     };
 
-    // 检查ChurnFlow MCP服务 - 使用端口检查
+    // 检查ChurnFlow MCP服务 - 检查进程是否存在
     try {
-      const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3008');
-      const churnFlowHealthy = await checkPortHealth(churnFlowPort);
+      const churnFlowHealthy = await checkMCPProcessHealth('churnflow');
       healthStatus.services.churnFlow = {
         status: churnFlowHealthy ? 'healthy' : 'unhealthy',
-        details: churnFlowHealthy ? 'Port accessible' : 'Port not accessible',
-        port: churnFlowPort
+        details: churnFlowHealthy ? 'MCP process running' : 'MCP process not found',
+        type: 'stdio'
       };
     } catch (error) {
       healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
@@ -58,12 +57,11 @@ app.get('/api/health', async (req, res) => {
 
     // 检查Shrimp MCP服务
     try {
-      const shrimpPort = parseInt(process.env.SHRIMP_PORT || '3009');
-      const shrimpHealthy = await checkPortHealth(shrimpPort);
+      const shrimpHealthy = await checkMCPProcessHealth('shrimp');
       healthStatus.services.shrimp = {
         status: shrimpHealthy ? 'healthy' : 'unhealthy',
-        details: shrimpHealthy ? 'Port accessible' : 'Port not accessible',
-        port: shrimpPort
+        details: shrimpHealthy ? 'MCP process running' : 'MCP process not found',
+        type: 'stdio'
       };
     } catch (error) {
       healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
@@ -76,21 +74,50 @@ app.get('/api/health', async (req, res) => {
       healthStatus.services.webUI = {
         status: webHealthy ? 'healthy' : 'unhealthy',
         details: webHealthy ? 'URL accessible' : 'URL not accessible',
+        type: 'http',
         url: webUrl
       };
     } catch (error) {
       healthStatus.services.webUI = { status: 'unhealthy', error: error.message };
     }
 
-    const allHealthy = Object.values(healthStatus.services).every(s => s.status === 'healthy');
+    const allHealthy = Object.values(healthStatus.services).every(s => s.status === 'healthy');   
     healthStatus.status = allHealthy ? 'healthy' : 'degraded';
     res.json(healthStatus);
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
   }
-});
+});// MCP 进程健康检查（通过检查进程是否存在）
+async function checkMCPProcessHealth(serviceName) {
+  return new Promise((resolve) => {
+    try {
+      // 使用 ps 命令检查进程是否存在
+      const { exec } = require('child_process');
+      const command = process.platform === 'win32' 
+        ? `tasklist /FI "IMAGENAME eq node.exe" /FO TABLE`
+        : `ps aux | grep "${serviceName}" | grep -v grep`;
+      
+      exec(command, (error, stdout) => {
+        if (error) {
+          resolve(false);
+          return;
+        }
+        
+        // 检查输出中是否包含服务名称
+        const output = stdout.toLowerCase();
+        const isRunning = output.includes(serviceName.toLowerCase()) || 
+                         output.includes('churnflow') ||
+                         output.includes('shrimp');
+        
+        resolve(isRunning);
+      });
+    } catch (error) {
+      resolve(false);
+    }
+  });
+}
 
-// 端口健康检查辅助函数
+// 端口健康检查辅助函数（备用）
 async function checkPortHealth(port, host = 'localhost') {
   return new Promise((resolve) => {
     const socket = net.createConnection({ port, host }, () => {
@@ -109,32 +136,37 @@ async function checkPortHealth(port, host = 'localhost') {
 // URL健康检查辅助函数（适用于多服务部署）
 async function checkUrlHealth(url, timeout = 5000) {
   return new Promise((resolve) => {
-    const protocol = url.startsWith('https') ? require('https') : require('http');
-    const req = protocol.request(url, { method: 'GET', timeout: timeout }, (res) => {
-      const healthy = res.statusCode >= 200 && res.statusCode < 400;
+    // 使用 fetch API（Node.js 18+ 内置）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    fetch(url, { 
+      method: 'GET',
+      signal: controller.signal
+    })
+    .then(res => {
+      clearTimeout(timeoutId);
+      const healthy = res.status >= 200 && res.status < 400;
       resolve(healthy);
-      res.on('data', () => {});
-      res.on('end', () => {});
+    })
+    .catch(() => {
+      clearTimeout(timeoutId);
+      resolve(false);
     });
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => { req.destroy(); resolve(false); });
-    req.end();
   });
 }
 
 // MCP健康检查端点
 app.get('/api/mcp-health', async (req, res) => {
   try {
-      const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3008');
-      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL;
     const [churnFlowHealthy, shrimpHealthy] = await Promise.all([
-      checkPortHealth(churnFlowPort),
-      checkPortHealth(shrimpPort)
+      checkMCPProcessHealth('churnflow'),
+      checkMCPProcessHealth('shrimp')
     ]);
     res.json({
       timestamp: new Date().toISOString(),
-      churnFlow: { status: churnFlowHealthy ? 'healthy' : 'unhealthy', port: churnFlowPort },
-      shrimp: { status: shrimpHealthy ? 'healthy' : 'unhealthy', port: shrimpPort }
+      churnFlow: { status: churnFlowHealthy ? 'healthy' : 'unhealthy', type: 'stdio' },     
+      shrimp: { status: shrimpHealthy ? 'healthy' : 'unhealthy', type: 'stdio' }
     });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
@@ -145,14 +177,19 @@ app.get('/api/mcp-health', async (req, res) => {
 app.get('/api/services', async (req, res) => {
   try {
     const services = [
-      { name: 'ChurnFlow MCP', port: parseInt(process.env.CHURNFLOW_PORT || '3001') },
-      { name: 'Shrimp Task Manager', port: parseInt(process.env.SHRIMP_PORT || '3002') },
-      { name: 'Web UI', port: parseInt(process.env.WEB_PORT || '3000') }
+      { name: 'ChurnFlow MCP', type: 'stdio', serviceName: 'churnflow' },
+      { name: 'Shrimp Task Manager', type: 'stdio', serviceName: 'shrimp' },
+      { name: 'Web UI', type: 'http', url: process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app' }
     ];
-    const statusChecks = await Promise.all(services.map(async (service) => ({
-      ...service,
-      status: await checkPortHealth(service.port) ? 'running' : 'stopped'
-    })));
+    const statusChecks = await Promise.all(services.map(async (service) => {
+      if (service.type === 'stdio') {
+        const healthy = await checkMCPProcessHealth(service.serviceName);
+        return { ...service, status: healthy ? 'running' : 'stopped' };
+      } else {
+        const healthy = await checkUrlHealth(service.url);
+        return { ...service, status: healthy ? 'running' : 'stopped' };
+      }
+    }));
     res.json({ timestamp: new Date().toISOString(), services: statusChecks });
   } catch (error) {
     res.status(500).json({ status: 'error', error: error.message, timestamp: new Date().toISOString() });
@@ -162,9 +199,8 @@ app.get('/api/services', async (req, res) => {
 // 原有MCP路由保持不变
 app.get('/api/mcp/churnflow', async (req, res) => {
   try {
-    const port = parseInt(process.env.CHURNFLOW_PORT || '3001');
-    const healthy = await checkPortHealth(port);
-    res.json({ service: 'ChurnFlow MCP', status: healthy ? 'running' : 'stopped', port: port, timestamp: new Date().toISOString() });
+    const healthy = await checkMCPProcessHealth('churnflow');
+    res.json({ service: 'ChurnFlow MCP', status: healthy ? 'running' : 'stopped', type: 'stdio', timestamp: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -172,15 +208,12 @@ app.get('/api/mcp/churnflow', async (req, res) => {
 
 app.get('/api/mcp/shrimp', async (req, res) => {
   try {
-    const port = parseInt(process.env.SHRIMP_PORT || '3002');
-    const healthy = await checkPortHealth(port);
-    res.json({ service: 'Shrimp Task Manager', status: healthy ? 'running' : 'stopped', port: port, timestamp: new Date().toISOString() });
+    const healthy = await checkMCPProcessHealth('shrimp');
+    res.json({ service: 'Shrimp Task Manager', status: healthy ? 'running' : 'stopped', type: 'stdio', timestamp: new Date().toISOString() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// 获取所有任务
+});// 获取所有任务
 app.get('/api/tasks', (req, res) => {
   res.json(tasks);
 });
