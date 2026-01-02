@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import matter from "gray-matter";
 import {
@@ -51,27 +52,94 @@ export class TrackerManager {
   private async loadTrackers(): Promise<void> {
     this.trackers.clear();
 
+    // Get base paths from config
+    const trackingPath = this.config.trackingPath || path.join(process.cwd(), 'data', 'tracking');
+    const collectionsPath = this.config.collectionsPath || path.join(process.cwd(), 'data', 'collections');
+
     for (const entry of this.crossref) {
       if (!entry.active) continue;
 
       try {
-        const trackerData = await fs.readFile(entry.trackerFile, "utf-8");
+        // Resolve tracker file path - handle both absolute and relative paths
+        let trackerFilePath = entry.trackerFile;
+        
+        // If path is absolute but doesn't exist, try relative to trackingPath
+        if (path.isAbsolute(trackerFilePath) && !fsSync.existsSync(trackerFilePath)) {
+          const fileName = path.basename(trackerFilePath);
+          trackerFilePath = path.join(trackingPath, fileName);
+        }
+        
+        // If still doesn't exist, try creating from trackingPath
+        if (!fsSync.existsSync(trackerFilePath)) {
+          trackerFilePath = path.join(trackingPath, `${entry.tag}.md`);
+        }
+
+        const trackerData = await fs.readFile(trackerFilePath, "utf-8");
         const parsed = matter(trackerData);
 
         const tracker: Tracker = {
           frontmatter: parsed.data as TrackerFrontmatter,
           content: parsed.content,
-          filePath: entry.trackerFile,
+          filePath: trackerFilePath,
         };
 
         this.trackers.set(entry.tag, tracker);
         console.log(`Loaded tracker: ${entry.tag} (${entry.contextType})`);
       } catch (error) {
         console.warn(`Failed to load tracker ${entry.tag}:`, error);
+        // Try to create default tracker if file doesn't exist
+        await this.createDefaultTracker(entry, trackingPath);
       }
     }
 
     console.log(`Loaded ${this.trackers.size} active trackers`);
+  }
+
+  /**
+   * Create default tracker file if it doesn't exist
+   */
+  private async createDefaultTracker(entry: CrossrefEntry, trackingPath: string): Promise<void> {
+    try {
+      const trackerFilePath = path.join(trackingPath, `${entry.tag}.md`);
+      const defaultContent = `---
+tag: ${entry.tag}
+friendlyName: ${entry.tag.charAt(0).toUpperCase() + entry.tag.slice(1)}
+contextType: ${entry.contextType}
+mode: standard
+collection: ${entry.tag}
+---
+
+# ${entry.tag.charAt(0).toUpperCase() + entry.tag.slice(1)} Tracker
+
+This is your ${entry.tag} tracker. Add items here to track your ${entry.contextType} activities.
+
+## Active Items
+
+`;
+
+      await fs.mkdir(path.dirname(trackerFilePath), { recursive: true });
+      await fs.writeFile(trackerFilePath, defaultContent, 'utf-8');
+      
+      // Also create collection file
+      const collectionsPath = this.config.collectionsPath || path.join(process.cwd(), 'data', 'collections');
+      const collectionFilePath = path.join(collectionsPath, `${entry.tag}.json`);
+      await fs.mkdir(path.dirname(collectionFilePath), { recursive: true });
+      await fs.writeFile(collectionFilePath, JSON.stringify([], null, 2), 'utf-8');
+
+      console.log(`✓ Created default tracker: ${entry.tag}`);
+      
+      // Load the newly created tracker
+      const trackerData = await fs.readFile(trackerFilePath, "utf-8");
+      const parsed = matter(trackerData);
+      const tracker: Tracker = {
+        frontmatter: parsed.data as TrackerFrontmatter,
+        content: parsed.content,
+        filePath: trackerFilePath,
+      };
+      this.trackers.set(entry.tag, tracker);
+    } catch (error) {
+      console.warn(`Failed to create default tracker ${entry.tag}:`, error);
+    }
   }
 
   /**
