@@ -46,10 +46,11 @@ app.get('/api/health', async (req, res) => {
     // 检查ChurnFlow MCP服务 - 使用端口检查
     try {
       const churnFlowPort = parseInt(process.env.CHURNFLOW_PORT || '3008');
-      const churnFlowUrl = process.env.MCP_CHURNFLOW_URL;
+      const churnFlowHealthy = await checkPortHealth(churnFlowPort);
       healthStatus.services.churnFlow = {
-        status: isChurnFlowHealthy ? 'healthy' : 'unhealthy',
-        details: isChurnFlowHealthy ? 'Port accessible' : 'Port not accessible'
+        status: churnFlowHealthy ? 'healthy' : 'unhealthy',
+        details: churnFlowHealthy ? 'Port accessible' : 'Port not accessible',
+        port: churnFlowPort
       };
     } catch (error) {
       healthStatus.services.churnFlow = { status: 'unhealthy', error: error.message };
@@ -58,10 +59,11 @@ app.get('/api/health', async (req, res) => {
     // 检查Shrimp MCP服务
     try {
       const shrimpPort = parseInt(process.env.SHRIMP_PORT || '3009');
-      const shrimpUrl = process.env.MCP_SHRIMP_URL;
+      const shrimpHealthy = await checkPortHealth(shrimpPort);
       healthStatus.services.shrimp = {
-        status: isShrimpHealthy ? 'healthy' : 'unhealthy',
-        details: isShrimpHealthy ? 'Port accessible' : 'Port not accessible'
+        status: shrimpHealthy ? 'healthy' : 'unhealthy',
+        details: shrimpHealthy ? 'Port accessible' : 'Port not accessible',
+        port: shrimpPort
       };
     } catch (error) {
       healthStatus.services.shrimp = { status: 'unhealthy', error: error.message };
@@ -70,9 +72,11 @@ app.get('/api/health', async (req, res) => {
     // 检查Web UI服务
     try {
       const webUrl = process.env.NEXT_PUBLIC_API_URL || 'https://ai-adhd-web.vercel.app';
+      const webHealthy = await checkUrlHealth(webUrl);
       healthStatus.services.webUI = {
-        status: isWebHealthy ? 'healthy' : 'unhealthy',
-        details: isWebHealthy ? 'Port accessible' : 'Port not accessible'
+        status: webHealthy ? 'healthy' : 'unhealthy',
+        details: webHealthy ? 'URL accessible' : 'URL not accessible',
+        url: webUrl
       };
     } catch (error) {
       healthStatus.services.webUI = { status: 'unhealthy', error: error.message };
@@ -88,23 +92,35 @@ app.get('/api/health', async (req, res) => {
 
 // 端口健康检查辅助函数
 async function checkPortHealth(port, host = 'localhost') {
-  }
-
-  // URL健康检查辅助函数（适用于多服务部署）
-  async function checkUrlHealth(url, timeout = 5000) {
-    return new Promise((resolve) => {
-      const protocol = url.startsWith('https') ? require('https') : require('http');
-      const req = protocol.request(url, { method: 'GET', timeout: timeout }, (res) => {
-        const healthy = res.statusCode >= 200 && res.statusCode < 400;
-        resolve(healthy);
-        res.on('data', () => {});
-        res.on('end', () => {});
-      });
-      req.on('error', () => resolve(false));
-      req.on('timeout', () => { req.destroy(); resolve(false); });
-      req.end();
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ port, host }, () => {
+      socket.end();
+      resolve(true);
     });
-  }
+    socket.on('error', () => resolve(false));
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.setTimeout(5000);
+  });
+}
+
+// URL健康检查辅助函数（适用于多服务部署）
+async function checkUrlHealth(url, timeout = 5000) {
+  return new Promise((resolve) => {
+    const protocol = url.startsWith('https') ? require('https') : require('http');
+    const req = protocol.request(url, { method: 'GET', timeout: timeout }, (res) => {
+      const healthy = res.statusCode >= 200 && res.statusCode < 400;
+      resolve(healthy);
+      res.on('data', () => {});
+      res.on('end', () => {});
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.end();
+  });
+}
 
 // MCP健康检查端点
 app.get('/api/mcp-health', async (req, res) => {
