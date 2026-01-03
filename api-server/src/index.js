@@ -381,13 +381,10 @@ app.delete('/api/tasks/:id', (req, res) => {
 
   // 直接 capture 端点（更简单的接口）
   app.post('/api/mcp/capture', async (req, res) => {
-    const startTime = Date.now();
-    console.log(`[CAPTURE] Request received`);
-    console.log(`[CAPTURE] Body:`, JSON.stringify(req.body).substring(0, 200));
-    
     try {
+      console.log('[CAPTURE] Request:', req.body);
+      
       if (!churnFlowClient || !churnFlowClient.state.isConnected) {
-        console.log(`[CAPTURE] ❌ MCP client not connected`);
         return res.status(503).json({ 
           error: 'ChurnFlow MCP service not available',
           status: 'disconnected'
@@ -400,13 +397,10 @@ app.delete('/api/tasks/:id', (req, res) => {
         return res.status(400).json({ error: 'text is required' });
       }
 
-      console.log(`[CAPTURE] Calling MCP...`);
       const result = await churnFlowClient.sendRequest('tools/call', {
         name: 'capture',
         arguments: { text, priority, context }
       });
-      
-      console.log(`[CAPTURE] ✅ Success in ${Date.now() - startTime}ms`);
 
       res.json({
         success: true,
@@ -414,12 +408,10 @@ app.delete('/api/tasks/:id', (req, res) => {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error(`[CAPTURE] ❌ Error after ${duration}ms:`, error.message);
+      console.error('[CAPTURE] Error:', error.message);
       res.status(500).json({ 
         error: error.message,
-        details: 'Failed to process capture request',
-        duration: duration
+        details: 'Failed to process capture request'
       });
     }
   });// Shrimp MCP 服务端点
