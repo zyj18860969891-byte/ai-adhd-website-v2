@@ -485,10 +485,69 @@ async function main(): Promise<void> {
     log('Server is ready to accept connections', 'info');
 
     // Keep the process alive
-    log('Server running, waiting for client connections...', 'info');
+    log('Server running, waiting for client connections...', 'info');        
     
     // Output ready flag for API server client detection
-    console.log('Ready: ChurnFlow MCP Server initialized');  } catch (error) {
+    console.log('Ready: ChurnFlow MCP Server initialized');
+    
+    // Test OpenAI connectivity on startup
+    setTimeout(async () => {
+      try {
+        const https = require('https');
+        const apiKey = process.env.OPENAI_API_KEY;
+        
+        if (!apiKey) {
+          log('❌ OPENAI_API_KEY not set', 'error');
+          return;
+        }
+        
+        log('Testing OpenAI connectivity...', 'info');
+        
+        const data = JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: 'connectivity test' }],
+          max_tokens: 5
+        });
+        
+        const req = https.request({
+          hostname: 'api.openai.com',
+          port: 443,
+          path: '/v1/chat/completions',
+          method: 'POST',
+          timeout: 10000,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+            'Content-Length': data.length
+          }
+        }, (res) => {
+          let body = '';
+          res.on('data', (chunk) => body += chunk);
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              log('✅ OpenAI API is accessible', 'info');
+            } else {
+              log(`⚠️ OpenAI API returned ${res.statusCode}: ${body.substring(0, 100)}`, 'error');
+            }
+          });
+        });
+        
+        req.on('error', (e) => {
+          log(`❌ OpenAI API error: ${e.message}`, 'error');
+        });
+        
+        req.on('timeout', () => {
+          log('❌ OpenAI API timeout', 'error');
+        });
+        
+        req.write(data);
+        req.end();
+      } catch (error) {
+        log(`❌ OpenAI test failed: ${error.message}`, 'error');
+      }
+    }, 5000);
+    
+  } catch (error) {
     log(`Failed to start server: ${error}`, 'error');
     log(`Stack: ${error instanceof Error ? error.stack : 'No stack trace'}`, 'error');
     // Don't exit immediately - let the process continue
