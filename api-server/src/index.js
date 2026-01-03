@@ -343,6 +343,7 @@ app.delete('/api/tasks/:id', (req, res) => {
         return res.status(400).json({ error: 'text is required' });
       }
 
+      // 使用 sendRequest 直接调用
       const result = await churnFlowClient.sendRequest('tools/call', {
         name: 'capture',
         arguments: {
@@ -417,7 +418,7 @@ app.listen(PORT, () => {
     }
 
     try {
-      // 调用 MCP 工具
+      // 直接发送 MCP 请求，使用正确的参数格式
       const result = await churnFlowClient.sendRequest('tools/call', {
         name: action,
         arguments: data
