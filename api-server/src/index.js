@@ -390,27 +390,44 @@ app.delete('/api/tasks/:id', (req, res) => {
 
   // 直接 capture 端点（更简单的接口）
   app.post('/api/mcp/capture', async (req, res) => {
+    console.log('[CAPTURE] === ENDPOINT HIT ===');
+    console.log('[CAPTURE] Body:', JSON.stringify(req.body));
+    
     try {
-      console.log('[CAPTURE] Request:', req.body);
-      
       if (!churnFlowClient || !churnFlowClient.state.isConnected) {
-        return res.status(503).json({ 
+        console.log('[CAPTURE] ChurnFlow not connected');
+        return res.status(503).json({
           error: 'ChurnFlow MCP service not available',
           status: 'disconnected'
         });
       }
 
-      const { text, priority = 'medium', context } = req.body;
-      
+      // 支持两种格式：{text, priority, context} 或 {action, data}
+      let text, priority, context;
+      if (req.body.action && req.body.data) {
+        console.log('[CAPTURE] Using action/data format');
+        text = req.body.data.text;
+        priority = req.body.data.priority || 'medium';
+        context = req.body.data.context;
+      } else {
+        console.log('[CAPTURE] Using direct format');
+        text = req.body.text;
+        priority = req.body.priority || 'medium';
+        context = req.body.context;
+      }
+
       if (!text) {
+        console.log('[CAPTURE] Missing text, returning 400');
         return res.status(400).json({ error: 'text is required' });
       }
 
+      console.log('[CAPTURE] Calling MCP with text:', text);
       const result = await churnFlowClient.sendRequest('tools/call', {
         name: 'capture',
         arguments: { text, priority, context }
       });
 
+      console.log('[CAPTURE] Success, sending response');
       res.json({
         success: true,
         data: result,
@@ -418,7 +435,7 @@ app.delete('/api/tasks/:id', (req, res) => {
       });
     } catch (error) {
       console.error('[CAPTURE] Error:', error.message);
-      res.status(500).json({ 
+      res.status(500).json({
         error: error.message,
         details: 'Failed to process capture request'
       });

@@ -140,8 +140,8 @@ export default class StdioMCPClient extends EventEmitter {
       };
       
         const onData = (data) => {
+          const str = data.toString();
           try {
-            const str = data.toString();
             // 尝试解析 JSON，处理可能的 emoji
             const response = JSON.parse(str);
             if (response.id === requestId) {
