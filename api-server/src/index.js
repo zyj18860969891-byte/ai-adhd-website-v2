@@ -28,7 +28,121 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       mcpHealth: '/api/mcp-health',
-      services: '/api/services'
+      services: '/api/services',
+      openaiTest: '/api/test/openai'
+    }
+  });
+});
+
+// OpenAI API 测试端点
+app.get('/api/test/openai', async (req, res) => {
+  const https = require('https');
+  const startTime = Date.now();
+  
+  console.log('[OPENAI-TEST] Starting OpenAI connectivity test');
+  
+  // 检查环境变量
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.json({
+      success: false,
+      error: 'OPENAI_API_KEY environment variable not set',
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // 测试 1: DNS 解析
+  const dns = require('dns');
+  const dnsResult = await new Promise((resolve) => {
+    dns.resolve('api.openai.com', (err, addresses) => {
+      if (err) {
+        resolve({ success: false, error: err.message });
+      } else {
+        resolve({ success: true, addresses });
+      }
+    });
+  });
+  
+  // 测试 2: 基础连接
+  const connectResult = await new Promise((resolve) => {
+    const req = https.request({
+      hostname: 'api.openai.com',
+      port: 443,
+      path: '/',
+      method: 'GET',
+      timeout: 5000
+    }, (res) => {
+      resolve({ success: true, statusCode: res.statusCode });
+    });
+    
+    req.on('error', (e) => {
+      resolve({ success: false, error: e.message });
+    });
+    
+    req.on('timeout', () => {
+      resolve({ success: false, error: 'Connection timeout' });
+    });
+    
+    req.end();
+  });
+  
+  // 测试 3: API 调用
+  const apiResult = await new Promise((resolve) => {
+    const data = JSON.stringify({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: 'test' }],
+      max_tokens: 5
+    });
+    
+    const req = https.request({
+      hostname: 'api.openai.com',
+      port: 443,
+      path: '/v1/chat/completions',
+      method: 'POST',
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+        'Content-Length': data.length
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', (chunk) => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          resolve({ success: true, statusCode: res.statusCode, response: body.substring(0, 100) });
+        } else {
+          resolve({ success: false, statusCode: res.statusCode, response: body.substring(0, 200) });
+        }
+      });
+    });
+    
+    req.on('error', (e) => {
+      resolve({ success: false, error: e.message });
+    });
+    
+    req.on('timeout', () => {
+      resolve({ success: false, error: 'API call timeout' });
+    });
+    
+    req.write(data);
+    req.end();
+  });
+  
+  const duration = Date.now() - startTime;
+  
+  res.json({
+    success: true,
+    timestamp: new Date().toISOString(),
+    duration: duration + 'ms',
+    results: {
+      dns: dnsResult,
+      connection: connectResult,
+      api: apiResult
+    },
+    summary: {
+      openaiAccessible: apiResult.success,
+      reason: apiResult.success ? 'OpenAI API is accessible' : (apiResult.error || 'Check details')
     }
   });
 });
@@ -329,29 +443,44 @@ app.delete('/api/tasks/:id', (req, res) => {
 
   // 直接 capture 端点（更简单的接口）
   app.post('/api/mcp/capture', async (req, res) => {
+    const startTime = Date.now();
+    console.log(`[CAPTURE] Request received at ${new Date().toISOString()}`);
+    console.log(`[CAPTURE] Body:`, JSON.stringify(req.body));
+    
     try {
+      console.log(`[CAPTURE] Checking MCP client connection...`);
       if (!churnFlowClient || !churnFlowClient.state.isConnected) {
+        console.log(`[CAPTURE] ❌ MCP client not connected`);
         return res.status(503).json({ 
           error: 'ChurnFlow MCP service not available',
           status: 'disconnected'
         });
       }
+      console.log(`[CAPTURE] ✅ MCP client connected, state:`, churnFlowClient.state);
 
       const { text, priority = 'medium', context } = req.body;
+      console.log(`[CAPTURE] Extracted params - text: "${text}", priority: "${priority}", context: "${context}"`);
       
       if (!text) {
+        console.log(`[CAPTURE] ❌ Missing text field`);
         return res.status(400).json({ error: 'text is required' });
       }
 
-      // 使用 sendRequest 直接调用
-      const result = await churnFlowClient.sendRequest('tools/call', {
+      console.log(`[CAPTURE] Calling MCP sendRequest...`);
+      const requestPayload = {
         name: 'capture',
         arguments: {
           text,
           priority,
           context
         }
-      });
+      };
+      console.log(`[CAPTURE] Request payload:`, JSON.stringify(requestPayload));
+
+      const result = await churnFlowClient.sendRequest('tools/call', requestPayload);
+      
+      console.log(`[CAPTURE] ✅ MCP response received in ${Date.now() - startTime}ms`);
+      console.log(`[CAPTURE] Result:`, JSON.stringify(result).substring(0, 200));
 
       res.json({
         success: true,
@@ -359,10 +488,13 @@ app.delete('/api/tasks/:id', (req, res) => {
         timestamp: new Date().toISOString()
       });
     } catch (error) {
-      console.error('Capture API error:', error);
+      const duration = Date.now() - startTime;
+      console.error(`[CAPTURE] ❌ Error after ${duration}ms:`, error.message);
+      console.error(`[CAPTURE] Stack:`, error.stack);
       res.status(500).json({ 
         error: error.message,
-        details: 'Failed to process capture request'
+        details: 'Failed to process capture request',
+        duration: duration
       });
     }
   });// Shrimp MCP 服务端点
