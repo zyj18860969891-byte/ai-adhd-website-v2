@@ -117,12 +117,21 @@ export default class StdioMCPClient extends EventEmitter {
       }
     });
   }  async sendRequest(method, params = {}) {
+    const startTime = Date.now();
+    const requestId = ++this.requestId;
+    
+    console.log(`[MCP-CLIENT] [${requestId}] Sending request:`, {
+      method,
+      params: JSON.stringify(params).substring(0, 200)
+    });
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Request timeout'));
+        const duration = Date.now() - startTime;
+        console.error(`[MCP-CLIENT] [${requestId}] ❌ Timeout after ${duration}ms`);
+        reject(new Error(`Request timeout after ${duration}ms`));
       }, this.options.timeout.request);
-      
-      const requestId = ++this.requestId;
+
       const request = {
         jsonrpc: '2.0',
         id: requestId,
@@ -136,12 +145,15 @@ export default class StdioMCPClient extends EventEmitter {
             // 尝试解析 JSON，处理可能的 emoji
             const response = JSON.parse(str);
             if (response.id === requestId) {
+              const duration = Date.now() - startTime;
               this.process.stdout.off('data', onData);
               clearTimeout(timeout);
 
               if (response.error) {
+                console.error(`[MCP-CLIENT] [${requestId}] ❌ Error response:`, response.error);
                 reject(new Error(response.error.message));
               } else {
+                console.log(`[MCP-CLIENT] [${requestId}] ✅ Success in ${duration}ms`);
                 resolve(response.result);
               }
             }
@@ -150,15 +162,19 @@ export default class StdioMCPClient extends EventEmitter {
             if (str.trim().startsWith('{')) {
               // 可能是 JSON 但包含非法字符，尝试清理
               try {
-                const cleaned = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+                const cleaned = str.replace(/[\u0000-\u001F\u007F-\u009F]/g, 
+'');
                 const response = JSON.parse(cleaned);
                 if (response.id === requestId) {
+                  const duration = Date.now() - startTime;
                   this.process.stdout.off('data', onData);
                   clearTimeout(timeout);
-                  
+
                   if (response.error) {
+                    console.error(`[MCP-CLIENT] [${requestId}] ❌ Error response (cleaned):`, response.error);
                     reject(new Error(response.error.message));
                   } else {
+                    console.log(`[MCP-CLIENT] [${requestId}] ✅ Success (cleaned) in ${duration}ms`);
                     resolve(response.result);
                   }
                 }
@@ -170,6 +186,7 @@ export default class StdioMCPClient extends EventEmitter {
           }
         };      this.process.stdout.on('data', onData);
       this.process.stdin.write(JSON.stringify(request) + '\n');
+      console.log(`[MCP-CLIENT] [${requestId}] Request sent`);
     });
   }
 

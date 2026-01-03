@@ -34,67 +34,23 @@ app.get('/', (req, res) => {
   });
 });
 
-// OpenAI API 测试端点
+// OpenAI API 测试端点（简化版）
 app.get('/api/test/openai', async (req, res) => {
-  const https = require('https');
-  const startTime = Date.now();
-  
-  console.log('[OPENAI-TEST] Starting OpenAI connectivity test');
-  
-  // 检查环境变量
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.json({
-      success: false,
-      error: 'OPENAI_API_KEY environment variable not set',
-      timestamp: new Date().toISOString()
-    });
-  }
-  
-  // 测试 1: DNS 解析
-  const dns = require('dns');
-  const dnsResult = await new Promise((resolve) => {
-    dns.resolve('api.openai.com', (err, addresses) => {
-      if (err) {
-        resolve({ success: false, error: err.message });
-      } else {
-        resolve({ success: true, addresses });
-      }
-    });
-  });
-  
-  // 测试 2: 基础连接
-  const connectResult = await new Promise((resolve) => {
-    const req = https.request({
-      hostname: 'api.openai.com',
-      port: 443,
-      path: '/',
-      method: 'GET',
-      timeout: 5000
-    }, (res) => {
-      resolve({ success: true, statusCode: res.statusCode });
-    });
+  try {
+    const https = require('https');
+    const apiKey = process.env.OPENAI_API_KEY;
     
-    req.on('error', (e) => {
-      resolve({ success: false, error: e.message });
-    });
-    
-    req.on('timeout', () => {
-      resolve({ success: false, error: 'Connection timeout' });
-    });
-    
-    req.end();
-  });
-  
-  // 测试 3: API 调用
-  const apiResult = await new Promise((resolve) => {
+    if (!apiKey) {
+      return res.json({ success: false, error: 'OPENAI_API_KEY not set' });
+    }
+
     const data = JSON.stringify({
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: 'test' }],
       max_tokens: 5
     });
-    
-    const req = https.request({
+
+    const req2 = https.request({
       hostname: 'api.openai.com',
       port: 443,
       path: '/v1/chat/completions',
@@ -105,46 +61,27 @@ app.get('/api/test/openai', async (req, res) => {
         'Authorization': 'Bearer ' + apiKey,
         'Content-Length': data.length
       }
-    }, (res) => {
+    }, (response) => {
       let body = '';
-      res.on('data', (chunk) => body += chunk);
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          resolve({ success: true, statusCode: res.statusCode, response: body.substring(0, 100) });
-        } else {
-          resolve({ success: false, statusCode: res.statusCode, response: body.substring(0, 200) });
-        }
+      response.on('data', (chunk) => body += chunk);
+      response.on('end', () => {
+        res.json({
+          success: response.statusCode === 200,
+          statusCode: response.statusCode,
+          response: body.substring(0, 200)
+        });
       });
     });
-    
-    req.on('error', (e) => {
-      resolve({ success: false, error: e.message });
+
+    req2.on('error', (e) => {
+      res.json({ success: false, error: e.message });
     });
-    
-    req.on('timeout', () => {
-      resolve({ success: false, error: 'API call timeout' });
-    });
-    
-    req.write(data);
-    req.end();
-  });
-  
-  const duration = Date.now() - startTime;
-  
-  res.json({
-    success: true,
-    timestamp: new Date().toISOString(),
-    duration: duration + 'ms',
-    results: {
-      dns: dnsResult,
-      connection: connectResult,
-      api: apiResult
-    },
-    summary: {
-      openaiAccessible: apiResult.success,
-      reason: apiResult.success ? 'OpenAI API is accessible' : (apiResult.error || 'Check details')
-    }
-  });
+
+    req2.write(data);
+    req2.end();
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // API 路由
