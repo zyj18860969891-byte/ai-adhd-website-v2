@@ -85,6 +85,15 @@ app.get('/api/test/openai', async (req, res) => {
   }
 });
 
+// 简单的捕获测试端点
+app.post('/api/test/capture-simple', async (req, res) => {
+  res.json({
+    success: true,
+    message: 'This is a simple test endpoint',
+    received: req.body
+  });
+});
+
 // API 路由
 
 // 全局 MCP 客户端实例（在文件底部初始化）
