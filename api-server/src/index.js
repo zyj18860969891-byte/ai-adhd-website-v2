@@ -34,10 +34,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// OpenAI API 测试端点（简化版）
+// OpenAI API 测试端点（ES 模块版本）
+import https from 'https';
+
 app.get('/api/test/openai', async (req, res) => {
   try {
-    const https = require('https');
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
@@ -381,11 +382,10 @@ app.delete('/api/tasks/:id', (req, res) => {
   // 直接 capture 端点（更简单的接口）
   app.post('/api/mcp/capture', async (req, res) => {
     const startTime = Date.now();
-    console.log(`[CAPTURE] Request received at ${new Date().toISOString()}`);
-    console.log(`[CAPTURE] Body:`, JSON.stringify(req.body));
+    console.log(`[CAPTURE] Request received`);
+    console.log(`[CAPTURE] Body:`, JSON.stringify(req.body).substring(0, 200));
     
     try {
-      console.log(`[CAPTURE] Checking MCP client connection...`);
       if (!churnFlowClient || !churnFlowClient.state.isConnected) {
         console.log(`[CAPTURE] ❌ MCP client not connected`);
         return res.status(503).json({ 
@@ -393,31 +393,20 @@ app.delete('/api/tasks/:id', (req, res) => {
           status: 'disconnected'
         });
       }
-      console.log(`[CAPTURE] ✅ MCP client connected, state:`, churnFlowClient.state);
 
       const { text, priority = 'medium', context } = req.body;
-      console.log(`[CAPTURE] Extracted params - text: "${text}", priority: "${priority}", context: "${context}"`);
       
       if (!text) {
-        console.log(`[CAPTURE] ❌ Missing text field`);
         return res.status(400).json({ error: 'text is required' });
       }
 
-      console.log(`[CAPTURE] Calling MCP sendRequest...`);
-      const requestPayload = {
+      console.log(`[CAPTURE] Calling MCP...`);
+      const result = await churnFlowClient.sendRequest('tools/call', {
         name: 'capture',
-        arguments: {
-          text,
-          priority,
-          context
-        }
-      };
-      console.log(`[CAPTURE] Request payload:`, JSON.stringify(requestPayload));
-
-      const result = await churnFlowClient.sendRequest('tools/call', requestPayload);
+        arguments: { text, priority, context }
+      });
       
-      console.log(`[CAPTURE] ✅ MCP response received in ${Date.now() - startTime}ms`);
-      console.log(`[CAPTURE] Result:`, JSON.stringify(result).substring(0, 200));
+      console.log(`[CAPTURE] ✅ Success in ${Date.now() - startTime}ms`);
 
       res.json({
         success: true,
@@ -427,7 +416,6 @@ app.delete('/api/tasks/:id', (req, res) => {
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(`[CAPTURE] ❌ Error after ${duration}ms:`, error.message);
-      console.error(`[CAPTURE] Stack:`, error.stack);
       res.status(500).json({ 
         error: error.message,
         details: 'Failed to process capture request',
