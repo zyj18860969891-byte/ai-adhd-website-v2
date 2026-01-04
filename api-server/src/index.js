@@ -18,20 +18,210 @@ app.use(cors());
 app.use(express.json({ limit: '10mb', type: 'application/json' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Root path handler
+// Root path handler - HTML frontend
 app.get('/', (req, res) => {
-  res.json({
-    message: 'AI ADHD Website API Server',
-    version: '1.0.0',
-    status: 'running',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      health: '/api/health',
-      mcpHealth: '/api/mcp-health',
-      services: '/api/services',
-      openaiTest: '/api/test/openai'
+  res.send(`
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI ADHD Website - Dashboard</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
     }
-  });
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .status {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #10b981;
+      color: white;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+    .services {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .service-card {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    .service-card:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    .service-card h3 {
+      margin: 0 0 10px 0;
+      color: #667eea;
+    }
+    .service-card p {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+    .service-card .badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 8px;
+      background: #667eea;
+      color: white;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .endpoints {
+      margin-top: 30px;
+      background: #f1f5f9;
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .endpoints h3 {
+      margin-top: 0;
+      color: #334155;
+    }
+    .endpoints ul {
+      list-style: none;
+      padding: 0;
+    }
+    .endpoints li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .endpoints li:last-child {
+      border-bottom: none;
+    }
+    .endpoints code {
+      background: #334155;
+      color: #60a5fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .timestamp {
+      margin-top: 30px;
+      color: #94a3b8;
+      font-size: 12px;
+      text-align: center;
+    }
+    .action-buttons {
+      margin-top: 30px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-1px);
+    }
+    .btn.secondary {
+      background: #64748b;
+    }
+    .btn.secondary:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 AI ADHD Website</h1>
+    <p class="subtitle">智能任务管理与生产力工具</p>
+    <span class="status">🟢 系统运行中</span>
+    
+    <div class="services">
+      <div class="service-card">
+        <h3>🧠 ChurnFlow MCP</h3>
+        <p>智能捕获与AI路由系统</p>
+        <span class="badge">✅ 已连接</span>
+      </div>
+      <div class="service-card">
+        <h3>🦐 Shrimp MCP</h3>
+        <p>高级任务管理与反思</p>
+        <span class="badge">✅ 已连接</span>
+      </div>
+      <div class="service-card">
+        <h3>📊 数据库</h3>
+        <p>better-sqlite3 + Drizzle ORM</p>
+        <span class="badge">✅ 正常</span>
+      </div>
+      <div class="service-card">
+        <h3>🔗 API 服务器</h3>
+        <p>Express + MCP 集成</p>
+        <span class="badge">✅ 运行中</span>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <a href="/api/health" class="btn">检查健康状态</a>
+      <a href="/api/test/openai" class="btn">测试 OpenAI</a>
+      <a href="/api/mcp/capture" class="btn secondary">捕获端点</a>
+      <a href="/api/tasks" class="btn secondary">任务列表</a>
+    </div>
+
+    <div class="endpoints">
+      <h3>📋 可用端点</h3>
+      <ul>
+        <li><code>GET /</code> - 本页面</li>
+        <li><code>GET /api/health</code> - 系统健康检查</li>
+        <li><code>GET /api/mcp-health</code> - MCP 服务状态</li>
+        <li><code>POST /api/mcp/capture</code> - 智能捕获</li>
+        <li><code>POST /api/mcp/shrimp</code> - Shrimp 任务管理</li>
+        <li><code>POST /api/tasks</code> - 创建任务</li>
+        <li><code>GET /api/tasks</code> - 查询任务</li>
+        <li><code>GET /api/test/openai</code> - OpenAI 测试</li>
+      </ul>
+    </div>
+
+    <div class="timestamp">
+      服务器时间: <span id="serverTime"></span><br>
+      部署版本: v1.0.0 | 生产环境
+    </div>
+  </div>
+
+  <script>
+    // 实时显示服务器时间
+    setInterval(() => {
+      document.getElementById('serverTime').textContent = new Date().toLocaleString('zh-CN');
+    }, 1000);
+  </script>
+</body>
+</html>
+  `);
 });
 
 // OpenAI API 测试端点（ES 模块版本）
