@@ -6,6 +6,7 @@ import net from 'net';
 dotenv.config();
 
 import StdioMCPClient from './stdio-mcp-client.js';
+import { createA2UIRoutes } from './routes/a2ui-routes.js';
 
 // 启动时不要等待MCP服务连接，让它们在后台运行
 console.log('Starting API Server on port', process.env.PORT || 3003);
@@ -674,8 +675,67 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 3003;
 
 
-app.listen(PORT, () => {
+// ============================================================================
+// A2UI Agent System Initialization
+// ============================================================================
+let agentManager = null;
+
+async function initializeAgentSystem() {
+  try {
+    console.log('[Agent System] Initializing...');
+
+    // Import DatabaseManager
+    const { DatabaseManager } = await import('./churnflow-mcp/src/storage/DatabaseManager.js');
+    
+    const dbManager = new DatabaseManager();
+    await dbManager.initialize();
+    console.log('[Agent System] ✅ Database initialized');
+
+    // Import AgentFactory
+    const { AgentFactory } = await import('./agent/agent-core.js');
+
+    // Create main agent
+    const mainAgent = AgentFactory.create('MainAgent', dbManager, {
+      version: '2.0.0',
+      capabilities: ['capture', 'task', 'review', 'analysis', 'a2ui', 'collaboration'],
+      permissionLevel: 'write',
+    });
+
+    // Register MCP clients
+    if (churnFlowClient) {
+      mainAgent.registerMCPClient('churnflow', churnFlowClient);
+    }
+    if (shrimpClient) {
+      mainAgent.registerMCPClient('shrimp', shrimpClient);
+    }
+
+    await mainAgent.initializeSystem();
+    agentManager = mainAgent;
+
+    console.log('[Agent System] ✅ Fully initialized');
+    return mainAgent;
+  } catch (error) {
+    console.error('[Agent System] ❌ Initialization failed:', error.message);
+    return null;
+  }
+}
+
+app.listen(PORT, async () => {
     console.log(`API服务器运行在端口 ${PORT}`);
+    
+    // Initialize A2UI Agent System
+    const agent = await initializeAgentSystem();
+    
+    // Register A2UI routes
+    if (agent) {
+      app.use('/api', createA2UIRoutes(dbManager, new Map([
+        ['churnflow', churnFlowClient],
+        ['shrimp', shrimpClient]
+      ])));
+      console.log('✅ A2UI routes registered at /api/agent/* and /api/a2ui/*');
+    } else {
+      console.log('⚠️  A2UI routes not registered (agent initialization failed)');
+    }
   });  // 辅助函数 - 调用实际MCP服务
   async function handleChurnFlowAction(action, data) {
     if (!churnFlowClient || !churnFlowClient.state.isConnected) {
@@ -797,198 +857,3 @@ setTimeout(() => {
   initializeMCPClients();
 }, 3000);
 
-
-// ============================================================================
-// Agent 系统端点 (A2UI 简化版)
-// ============================================================================
-
-// Agent 状态
-app.get('/api/agent/status', async (req, res) => {
-  res.json({
-    status: 'ready',
-    agent: 'MainAgent',
-    version: '2.0.0',
-    capabilities: ['capture', 'task', 'review', 'analysis', 'a2ui', 'collaboration'],
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Skills 列表
-app.get('/api/agent/skills', async (req, res) => {
-  const skills = [
-    { name: 'capture_skill', intent: 'capture,add,note', confidence: 0.95 },
-    { name: 'task_management', intent: 'task,todo,schedule', confidence: 0.92 },
-    { name: 'review_skill', intent: 'review,check', confidence: 0.90 },
-    { name: 'analysis_skill', intent: 'analyze,insight', confidence: 0.88 },
-    { name: 'a2ui_interaction', intent: 'form,wizard', confidence: 0.93 },
-    { name: 'agent_collaboration', intent: 'collaborate,delegate', confidence: 0.85 }
-  ];
-  res.json({ success: true, skills });
-});
-
-// Tools 列表
-app.get('/api/agent/tools', async (req, res) => {
-  const tools = [
-    { name: 'capture_tool', type: 'mcp', service: 'churnflow' },
-    { name: 'task_create', type: 'mcp', service: 'shrimp' },
-    { name: 'task_list', type: 'mcp', service: 'shrimp' },
-    { name: 'task_update', type: 'mcp', service: 'shrimp' },
-    { name: 'context_analyzer', type: 'internal' },
-    { name: 'ai_classifier', type: 'internal' },
-    { name: 'review_finder', type: 'internal' },
-    { name: 'review_ui', type: 'internal' },
-    { name: 'a2ui_generator', type: 'internal' },
-    { name: 'a2ui_validator', type: 'internal' },
-    { name: 'task_splitter', type: 'internal' },
-    { name: 'result_aggregator', type: 'internal' },
-    { name: 'data_analyzer', type: 'internal' },
-    { name: 'insight_generator', type: 'internal' },
-    { name: 'report_builder', type: 'internal' },
-    { name: 'a2a_coordinator', type: 'a2a' }
-  ];
-  res.json({ success: true, tools, count: tools.length });
-});
-
-// Agent 处理端点
-app.post('/api/agent/process', async (req, res) => {
-  try {
-    const { userId, input, sessionId } = req.body;
-    if (!userId || !input) {
-      return res.status(400).json({ error: 'userId and input required' });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        userId,
-        input,
-        sessionId: sessionId || 'session_' + Date.now(),
-        intent: 'capture',
-        confidence: 0.95,
-        skill: 'capture_skill',
-        tools: ['context_analyzer', 'ai_classifier', 'capture_tool'],
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// A2UI 启动
-app.post('/api/a2ui/start', async (req, res) => {
-  try {
-    const { userId, intent } = req.body;
-    if (!userId || !intent) {
-      return res.status(400).json({ error: 'userId and intent required' });
-    }
-    
-    res.json({
-      success: true,
-      sessionId: 'session_' + Date.now(),
-      ui: {
-        intent: intent === 'capture' ? 'form' : 'list',
-        components: intent === 'capture' ? [
-          { type: 'input', props: { label: '内容', required: true } },
-          { type: 'select', props: { label: '类型', options: ['action', 'note', 'event'] } }
-        ] : [
-          { type: 'list', props: { items: [] } }
-        ]
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 快捷捕获
-app.post('/api/agent/capture', async (req, res) => {
-  try {
-    const { userId, content, priority = 'medium' } = req.body;
-    if (!userId || !content) {
-      return res.status(400).json({ error: 'userId and content required' });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        id: 'cap_' + Date.now(),
-        userId,
-        content,
-        priority,
-        category: 'action',
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 快捷任务
-app.post('/api/agent/task', async (req, res) => {
-  try {
-    const { userId, title, description } = req.body;
-    if (!userId || !title) {
-      return res.status(400).json({ error: 'userId and title required' });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        id: 'task_' + Date.now(),
-        userId,
-        title,
-        description: description || '',
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 快捷评审
-app.post('/api/agent/review', async (req, res) => {
-  try {
-    const { userId } = req.body;
-    if (!userId) {
-      return res.status(400).json({ error: 'userId required' });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        items: [],
-        summary: 'No items to review',
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Agent 协作
-app.post('/api/agent/collaborate', async (req, res) => {
-  try {
-    const { userId, task, agents } = req.body;
-    if (!userId || !task) {
-      return res.status(400).json({ error: 'userId and task required' });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        coordinationId: 'coord_' + Date.now(),
-        agents: agents || ['agent1', 'agent2'],
-        task,
-        strategy: 'divide_and_conquer',
-        timestamp: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
